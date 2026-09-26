@@ -1,0 +1,74 @@
+{
+  "name": "New Ikon Doors",
+  "tagline": "Elevate Your Space - Upgrade Your Entrance",
+  "phone": "+91 98424 45353",
+  "phoneAlt": "+91 98424 43353",
+  "whatsapp": "9842445353",
+  "email": "abbas43353@gmail.com",
+  "address": "Plot No. 45 C/A1, Thanjavur Road, Near Mariyamman Kovil Bus Stop, Tharanallur, Trichy - 620008, Tamil Nadu, India",
+  "specialization": "Dealers in PVC, Teak, Rubber Wood, Mica, Plywoods",
+  "machinery": "High-Precision CNC Automated Routing & Vacuum Membrane Technology",
+  "branches": [
+    {
+      "id": "new-ikon-doors",
+      "name": "New Ikon Doors & Ply",
+      "category": "Manufacturing & Experience Showroom",
+      "badge": "Main Showroom & Plant",
+      "desc": "Direct factory showroom displaying over 130+ live architectural door elevations including UV Membrane, Marble Laminate, Steel Patti Inlays, solid Teak, and Flush Doors with custom sizing.",
+      "description": "Direct factory showroom displaying over 130+ live architectural door elevations including UV Membrane, Marble Laminate, Steel Patti Inlays, solid Teak, and Flush Doors with custom sizing.",
+      "phone": "+91 98424 45353",
+      "phoneAlt": "+91 98424 43353",
+      "address": "Plot No. 45 C/A1, Thanjavur Road, Near Mariyamman Kovil Bus Stop, Tharanallur, Trichy - 620008",
+      "timings": "Mon - Sat: 9:00 AM - 8:30 PM",
+      "mapUrl": "https://www.google.com/maps/dir/?api=1&destination=New+Ikon+Doors+%26+Ply,+Thanjavur+Road,+Trichy",
+      "image": "/doors/showroom_experience.jpg",
+      "highlights": [],
+      "published": true,
+      "display_order": 0
+    },
+    {
+      "id": "classic-ply",
+      "name": "Classic Ply & Lam",
+      "category": "Wholesale Plywoods & Core Substrates",
+      "badge": "Plywood & Timber Division",
+      "desc": "Primary wholesale stockist for commercial, marine, and boiling waterproof (BWP) grade plywoods, block boards, and seasoned hardwood door frames.",
+      "description": "Primary wholesale stockist for commercial, marine, and boiling waterproof (BWP) grade plywoods, block boards, and seasoned hardwood door frames.",
+      "phone": "+91 98424 45353",
+      "phoneAlt": "",
+      "address": "Thanjavur Main Road Trade Corridor, Trichy, Tamil Nadu - 620008",
+      "timings": "Mon - Sat: 9:00 AM - 8:00 PM",
+      "mapUrl": "https://www.google.com/maps/dir/?api=1&destination=New+Ikon+Doors+%26+Ply,+Thanjavur+Road,+Trichy",
+      "image": "/doors/classic_ply_timber_warehouse.jpg",
+      "highlights": [
+        "BWP & BWR Marine Grade Plywood",
+        "Termite & Borer Proof Hardwood Cores",
+        "Bulk Contractor & Developer Supply",
+        "Direct Mill Wholesale Sourcing"
+      ],
+      "published": true,
+      "display_order": 1
+    },
+    {
+      "id": "royal-lam",
+      "name": "Royal Lam & Ply",
+      "category": "Laminates, WPVC & Edge Banding",
+      "badge": "Interior Solutions Division",
+      "desc": "Specialized distribution of designer 1mm Mica laminates, waterproof WPVC digital printed doors, high-density panels, and matching PVC edge banding.",
+      "description": "Specialized distribution of designer 1mm Mica laminates, waterproof WPVC digital printed doors, high-density panels, and matching PVC edge banding.",
+      "phone": "+91 98424 45353",
+      "phoneAlt": "",
+      "address": "Palakarai Commercial Market, Trichy, Tamil Nadu - 620001",
+      "timings": "Mon - Sat: 9:00 AM - 8:00 PM",
+      "mapUrl": "https://www.google.com/maps/dir/?api=1&destination=New+Ikon+Doors+%26+Ply,+Thanjavur+Road,+Trichy",
+      "image": "/doors/royal_lam_interior_showroom.jpg",
+      "highlights": [
+        "High-Definition WPVC Digital Doors",
+        "Designer Laminates & 1mm Mica Sheets",
+        "Premium Matching Edge Banding Rolls",
+        "Waterproof Bathroom & Balcony Doors"
+      ],
+      "published": true,
+      "display_order": 2
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { api } from '../services/api';
+import companyData from '../data/company.json';
+import productsData from '../data/products.json';
+
+const defaultSettings = {
+  company_name: companyData.name || 'New Ikon Doors',
+  tagline: companyData.tagline || 'Elevate Your Space • Upgrade Your Entrance',
+  phone: companyData.phone || '+91 98424 45353',
+  phone_alt: companyData.phoneAlt || '+91 98424 43353',
+  whatsapp: companyData.whatsapp || '9842445353',
+  email: companyData.email || 'abbas43353@gmail.com',
+  address: companyData.address || 'Plot No. 45 C/A1, Thanjavur Road, Near Mariyamman Kovil Bus Stop, Tharanallur, Trichy - 620008, Tamil Nadu, India',
+  specialization: companyData.specialization || 'Dealers in PVC, Teak, Rubber Wood, Mica, Plywoods',
+  machinery: companyData.machinery || 'High-Precision CNC Automated Routing & Vacuum Membrane Technology',
+  timings: 'Mon – Sat: 9:00 AM – 8:30 PM',
+  hq_city: 'Trichy, Tamil Nadu'
+};
+
+const defaultHomepage = {
+  hero: {
+    title: 'Doors that define the space.',
+    subtitle: 'Engineered with CNC precision, kiln-seasoned hardwood cores, and vacuum-bonded membrane technology. Wholesale door manufacturer and supplier in Trichy, Tamil Nadu.',
+    badge: 'New Ikon Doors • Manufacturing & Wholesale HQ',
+    cta_primary: 'Explore Collections',
+    cta_secondary: 'Request a Quote'
+  },
+  intro: {
+    statement: 'Premium doors designed to become part of the architecture.',
+    description: 'New Ikon Doors combines advanced CNC routing technology with traditional timber craftsmanship. Dealers in PVC, Teak, Rubber Wood, Mica, and Plywoods — serving architects, builders, and interior designers across Tamil Nadu.',
+    cta: 'Discover New Ikon'
+  },
+  trust_stats: [
+    { value: '130+', label: 'Catalogue Elevations' },
+    { value: '3', label: 'Trichy Group Divisions' },
+    { value: '10', label: 'Door Collections' }
+  ]
+};
+
+const SiteContext = createContext({
+  settings: defaultSettings,
+  collections: [],
+  homepageContent: defaultHomepage,
+  catalogue: { title: 'New Ikon Doors Catalogue', file_url: '/catalogue/NEW_IKON_DOORS.pdf', version: '1.0' },
+  refreshSiteData: () => {},
+  loading: true
+});
+
+export function useSite() {
+  return useContext(SiteContext);
+}
+
+export function SiteProvider({ children }) {
+  const [settings, setSettings] = useState(defaultSettings);
+  const [collections, setCollections] = useState(() => (productsData.collections || []).map(c => ({
+    ...c,
+    product_count: c.products ? c.products.length : 0
+  })));
+  const [homepageContent, setHomepageContent] = useState(defaultHomepage);
+  const [catalogue, setCatalogue] = useState({
+    title: 'New Ikon Doors Catalogue',
+    file_url: '/catalogue/NEW_IKON_DOORS.pdf',
+    version: '1.0'
+  });
+  const [loading, setLoading] = useState(true);
+
+  const refreshSiteData = useCallback(async () => {
+    try {
+      const [fetchedSettings, fetchedCollections, fetchedHomepage, fetchedCatalogue] = await Promise.allSettled([
+        api.getSettings(),
+        api.getCollections(),
+        api.getHomepage(),
+        api.getCatalogue()
+      ]);
+
+      if (fetchedSettings.status === 'fulfilled' && fetchedSettings.value) {
+        setSettings(prev => ({
+          ...prev,
+          ...fetchedSettings.value,
+          timings: fetchedSettings.value.timings || prev.timings,
+          phone: fetchedSettings.value.phone || prev.phone,
+          whatsapp: fetchedSettings.value.whatsapp || prev.whatsapp
+        }));
+      }
+
+      if (fetchedCollections.status === 'fulfilled' && Array.isArray(fetchedCollections.value) && fetchedCollections.value.length > 0) {
+        setCollections(fetchedCollections.value);
+      }
+
+      if (fetchedHomepage.status === 'fulfilled' && fetchedHomepage.value && Object.keys(fetchedHomepage.value).length > 0) {
+        setHomepageContent(prev => ({
+          ...prev,
+          ...fetchedHomepage.value,
+          hero: { ...prev.hero, ...(fetchedHomepage.value.hero || {}) },
+          intro: { ...prev.intro, ...(fetchedHomepage.value.intro || {}) }
+        }));
+      }
+
+      if (fetchedCatalogue.status === 'fulfilled' && fetchedCatalogue.value && fetchedCatalogue.value.file_url) {
+        setCatalogue(fetchedCatalogue.value);
+      }
+    } catch (err) {
+      console.warn('Error loading dynamic site data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshSiteData();
+
+    // Listen to admin update events
+    const handleDataChanged = () => {
+      refreshSiteData();
+    };
+
+    window.addEventListener('nid:data-changed', handleDataChanged);
+    window.addEventListener('focus', handleDataChanged);
+
+    return () => {
+      window.removeEventListener('nid:data-changed', handleDataChanged);
+      window.removeEventListener('focus', handleDataChanged);
+    };
+  }, [refreshSiteData]);
+
+  return (
+    <SiteContext.Provider value={{
+      settings,
+      collections,
+      homepageContent,
+      catalogue,
+      refreshSiteData,
+      loading
+    }}>
+      {children}
+    </SiteContext.Provider>
+  );
+}

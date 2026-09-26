@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "name": "Ar. Karthik Sundaram",
+    "role": "Principal Architect, Studio Vistas, Chennai & Trichy",
+    "company": "",
+    "location": "",
+    "quote": "We have specified New Ikon Doors across four luxury villa projects. Their UV Membrane and Steel Patti finishes deliver the bespoke sharpness of custom carpentry with factory-grade dimensional stability.",
+    "rating": 5,
+    "project": "Riverstone Residences (32 Luxury Villas)",
+    "photo": "",
+    "video_url": "",
+    "published": true,
+    "display_order": 0
+  },
+  {
+    "id": 2,
+    "name": "M. Rajendran",
+    "role": "Managing Director, Sri Vigneshwar Builders",
+    "company": "",
+    "location": "",
+    "quote": "Having worked with Abbas and the New Ikon team for over 12 years, their consistency in CNC precision and zero-defect delivery across 200+ unit residential towers is second to none.",
+    "rating": 5,
+    "project": "Greenfield Horizon Apartment Enclave",
+    "photo": "",
+    "video_url": "",
+    "published": true,
+    "display_order": 1
+  },
+  {
+    "id": 3,
+    "name": "Praveen Kumar",
+    "role": "Lead Interior Designer, SpaceCraft Interiors",
+    "company": "",
+    "location": "",
+    "quote": "The Marble Membrane series astonished our clients. The seamless fusion of marble grain with warm timber feel gave the master suites an opulent luxury presence that photos barely do justice.",
+    "rating": 5,
+    "project": "Trichy Executive Penthouse",
+    "photo": "",
+    "video_url": "",
+    "published": true,
+    "display_order": 2
+  }
+]
