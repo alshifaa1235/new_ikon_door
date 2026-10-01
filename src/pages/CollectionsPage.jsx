@@ -113,12 +113,26 @@ export default function CollectionsPage() {
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <div style={{ aspectRatio: '16/10', background: '#eee', overflow: 'hidden' }}>
+                  <div style={{
+                    aspectRatio: '16/11',
+                    background: 'radial-gradient(circle at center, #24221f 0%, #0f0e0d 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.85rem',
+                    overflow: 'hidden',
+                  }}>
                     <img
-                      src={col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`}
-                      alt={`New Ikon ${col.name} Collection`}
+                      src={col.hero_image || col.image || `/doors/door_p03_01.jpg`}
+                      alt={`New Ikon ${col.name} Signature Door`}
                       loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.65))',
+                        display: 'block',
+                      }}
                     />
                   </div>
                   <div style={{ padding: '1.25rem 1.5rem' }}>

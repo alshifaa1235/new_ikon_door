@@ -10,7 +10,7 @@
       "finish": "Gloss / Matte Velvet Stone Texture with Gold Accent inlays",
       "thickness": "30mm / 32mm / 35mm",
       "application": "Living Room, Master Bed, Executive Cabin, Villa Main Internal",
-      "hero_image": "lifestyle_page_03.jpg",
+      "hero_image": "/doors/door_p03_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 0,
@@ -195,7 +195,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p03_01.jpg"
     },
     {
       "slug": "uv-membrane",
@@ -207,7 +208,7 @@
       "finish": "Ultra High-Gloss UV Shield / Mirror Polish",
       "thickness": "30mm / 32mm / 35mm / 38mm",
       "application": "Bedroom, Apartment Interior, Luxury Suite, Modern Villas",
-      "hero_image": "lifestyle_page_04.jpg",
+      "hero_image": "/doors/door_p04_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 1,
@@ -1472,7 +1473,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p04_01.jpg"
     },
     {
       "slug": "mica-doors",
@@ -1484,7 +1486,7 @@
       "finish": "Natural Woodgrain Embossed / Matte Texture",
       "thickness": "32mm / 35mm / 38mm",
       "application": "High-traffic Passages, Commercial Offices, Hospitality, Master Bedrooms",
-      "hero_image": "lifestyle_page_09.jpg",
+      "hero_image": "/doors/door_p09_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 2,
@@ -2029,7 +2031,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p09_01.jpg"
     },
     {
       "slug": "steel-patti",
@@ -2041,7 +2044,7 @@
       "finish": "Brushed Chrome / Titanium Metallic Inlay with Silk Wood Finish",
       "thickness": "32mm / 35mm / 38mm",
       "application": "Contemporary Living, Main Entrances, Luxury Suites, Executive Offices",
-      "hero_image": "lifestyle_page_11.jpg",
+      "hero_image": "/doors/door_p11_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 3,
@@ -2586,7 +2589,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p11_01.jpg"
     },
     {
       "slug": "plain-membrane",
@@ -2598,7 +2602,7 @@
       "finish": "Satin Velvet Monolith / Fine Grain Matte",
       "thickness": "30mm / 32mm / 35mm",
       "application": "Bedrooms, Study Rooms, Hospital Suites, Commercial Developments",
-      "hero_image": "lifestyle_page_13.jpg",
+      "hero_image": "/doors/door_p13_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 4,
@@ -3503,7 +3507,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p13_01.jpg"
     },
     {
       "slug": "kumil-membrane",
@@ -3515,7 +3520,7 @@
       "finish": "Warm Teak & Rosewood Heritage Stain Finish",
       "thickness": "32mm / 35mm / 38mm",
       "application": "Puja Room, Traditional Entrances, Heritage Homes, Villas",
-      "hero_image": "lifestyle_page_17.jpg",
+      "hero_image": "/doors/door_p17_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 5,
@@ -3880,7 +3885,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p17_01.jpg"
     },
     {
       "slug": "3d-membrane",
@@ -3892,7 +3898,7 @@
       "finish": "3D Shadow Relief / Deep Matte Polymer",
       "thickness": "32mm / 35mm / 40mm",
       "application": "Feature Doors, Home Theatres, Main Hall Entrances, Designer Penthouses",
-      "hero_image": "lifestyle_page_18.jpg",
+      "hero_image": "/doors/door_p18_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 6,
@@ -4077,7 +4083,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p18_01.jpg"
     },
     {
       "slug": "micro-coating",
@@ -4089,7 +4096,7 @@
       "finish": "Ultra-Matte Velvet Soft-Touch / Zero-Smudge Texture",
       "thickness": "30mm / 32mm / 35mm",
       "application": "Luxury Apartments, Modern Condos, Bathrooms & Ensuites, Bedrooms",
-      "hero_image": "lifestyle_page_19.jpg",
+      "hero_image": "/doors/door_p19_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 7,
@@ -5174,7 +5181,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p19_01.jpg"
     },
     {
       "slug": "wpvc-digital",
@@ -5186,7 +5194,7 @@
       "finish": "High-Definition Digital Print with Protective Clear Coat",
       "thickness": "30mm / 32mm",
       "application": "Bathrooms, Restrooms, Coastal Properties, High-Moisture Utility Balconies",
-      "hero_image": "lifestyle_page_23.jpg",
+      "hero_image": "/doors/door_p23_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 8,
@@ -5551,7 +5559,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p23_01.jpg"
     },
     {
       "slug": "rubber-wood",
@@ -5563,7 +5572,7 @@
       "finish": "Natural Satin Lacquer / Honey Timber Stain",
       "thickness": "32mm / 35mm / 38mm",
       "application": "Eco-Luxury Residences, Bedrooms, Balcony Entrances, Resort Suites",
-      "hero_image": "lifestyle_page_24.jpg",
+      "hero_image": "/doors/door_p24_01.jpg",
       "featured": false,
       "published": true,
       "display_order": 9,
@@ -5748,7 +5757,8 @@
           "featured": false,
           "published": true
         }
-      ]
+      ],
+      "image": "/doors/door_p24_01.jpg"
     }
   ],
   "allProducts": [

@@ -102,50 +102,126 @@ export default function CollectionDetailPage({ slug }) {
   return (
     <div style={{ paddingTop: 'calc(var(--topbar-height) + var(--nav-height))' }}>
       {/* Collection Hero */}
-      <section style={{
-        position: 'relative',
-        minHeight: 360,
-        display: 'flex',
-        alignItems: 'center',
-        overflow: 'hidden',
-        background: '#0a0a0a',
-      }}>
-        <img
-          src={collection.hero_image || `/doors/lifestyle_page_${slug === 'uv-membrane' ? '04' : '03'}.jpg`}
-          alt={`New Ikon ${collection.name} Architectural Elevation`}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.45 }}
-        />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.3))' }} />
-        <div className="container" style={{ position: 'relative', zIndex: 2, color: '#fff' }}>
-          {/* Breadcrumb */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>
-            <a href="/" onClick={e => { e.preventDefault(); navigate('/'); }} style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Home</a>
-            <ChevronRight size={12} />
-            <a href="/collections" onClick={e => { e.preventDefault(); navigate('/collections'); }} style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Collections</a>
-            <ChevronRight size={12} />
-            <span style={{ color: '#fff' }}>{collection.name}</span>
-          </nav>
-
-          <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--color-gold-light)', marginBottom: '0.5rem' }}>
-            {collection.category || 'Door Collection'} • Trichy, Tamil Nadu
-          </div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(2rem, 4vw, 3rem)',
-            fontWeight: 500,
-            letterSpacing: '0.02em',
-            marginBottom: '1rem',
+      {(() => {
+        const rawDoor = collection.hero_image || (products[0]?.image) || '/doors/door_p03_01.jpg';
+        const featuredDoor = rawDoor.startsWith('/') || rawDoor.startsWith('http') ? rawDoor : `/doors/${rawDoor}`;
+        return (
+          <section style={{
+            position: 'relative',
+            minHeight: 380,
+            display: 'flex',
+            alignItems: 'center',
+            overflow: 'hidden',
+            background: 'radial-gradient(ellipse at 78% 50%, rgba(184, 134, 11, 0.16) 0%, rgba(18, 17, 15, 0.96) 55%, #0a0a0a 100%)',
           }}>
-            {collection.name}
-          </h1>
-          <p style={{ maxWidth: 580, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, fontSize: '0.95rem' }}>
-            {collection.description || collection.tagline || ''}
-          </p>
-          <div style={{ marginTop: '1rem', fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)' }}>
-            {products.length} live catalogue elevation{products.length !== 1 ? 's' : ''} on display at our Trichy showroom
-          </div>
-        </div>
-      </section>
+            {/* Subtle atmospheric ambient glow from featured door */}
+            <div style={{
+              position: 'absolute',
+              right: '8%',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '320px',
+              height: '320px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(184, 134, 11, 0.22) 0%, transparent 70%)',
+              filter: 'blur(45px)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }} />
+
+            <div className="container" style={{
+              position: 'relative',
+              zIndex: 2,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '2.5rem',
+              paddingTop: '2.5rem',
+              paddingBottom: '2.5rem',
+            }}>
+              {/* Left Column: Collection Info */}
+              <div style={{ maxWidth: 640 }}>
+                {/* Breadcrumb */}
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>
+                  <a href="/" onClick={e => { e.preventDefault(); navigate('/'); }} style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Home</a>
+                  <ChevronRight size={12} />
+                  <a href="/collections" onClick={e => { e.preventDefault(); navigate('/collections'); }} style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Collections</a>
+                  <ChevronRight size={12} />
+                  <span style={{ color: '#fff' }}>{collection.name}</span>
+                </nav>
+
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--color-gold-light)', marginBottom: '0.5rem' }}>
+                  {collection.category || 'Door Collection'} • Trichy, Tamil Nadu
+                </div>
+                <h1 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(2rem, 4vw, 3rem)',
+                  fontWeight: 500,
+                  letterSpacing: '0.02em',
+                  marginBottom: '1rem',
+                  lineHeight: 1.15,
+                }}>
+                  {collection.name}
+                </h1>
+                <p style={{ maxWidth: 580, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, fontSize: '0.95rem' }}>
+                  {collection.description || collection.tagline || ''}
+                </p>
+                <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.65)' }}>
+                    {products.length} live catalogue elevation{products.length !== 1 ? 's' : ''} on display at our Trichy showroom
+                  </div>
+                  <span style={{ color: 'var(--color-gold)' }}>•</span>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-gold-light)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    100% Solid Core Construction
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Single Specific Showcase Door Elevation */}
+              <div className="hide-mobile" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+              }}>
+                <div style={{
+                  position: 'relative',
+                  height: '310px',
+                  width: '160px',
+                  filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.85)) drop-shadow(0 0 15px rgba(184,134,11,0.2))',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                  background: '#151412',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}>
+                  <img
+                    src={featuredDoor}
+                    alt={`New Ikon ${collection.name} Signature Door Elevation`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      display: 'block',
+                    }}
+                  />
+                </div>
+                <span style={{
+                  marginTop: '0.65rem',
+                  fontSize: '0.68rem',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.5)',
+                  fontWeight: 500,
+                }}>
+                  Signature Elevation
+                </span>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Collection Specs Bar */}
       {(collection.material || collection.finish || collection.thickness) && (

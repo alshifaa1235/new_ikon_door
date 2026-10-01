@@ -25,8 +25,8 @@ function getFallbackCollections() {
     description: c.description || '',
     category: c.category || '',
     tagline: c.tagline || '',
-    cover_image: c.hero_image ? `/doors/${c.hero_image}` : '',
-    hero_image: c.hero_image ? `/doors/${c.hero_image}` : '',
+    cover_image: c.hero_image ? (c.hero_image.startsWith('/') || c.hero_image.startsWith('http') ? c.hero_image : `/doors/${c.hero_image}`) : '',
+    hero_image: c.hero_image ? (c.hero_image.startsWith('/') || c.hero_image.startsWith('http') ? c.hero_image : `/doors/${c.hero_image}`) : '',
     material: c.material || '',
     finish: c.finish || '',
     thickness: c.thickness || '',
@@ -42,10 +42,11 @@ function getFallbackCollections() {
 function getFallbackCollection(slug) {
   const col = (productsData.collections || []).find(c => c.slug === slug);
   if (!col) return null;
+  const colHero = col.hero_image ? (col.hero_image.startsWith('/') || col.hero_image.startsWith('http') ? col.hero_image : `/doors/${col.hero_image}`) : '';
   return {
     ...col,
-    cover_image: col.hero_image ? `/doors/${col.hero_image}` : '',
-    hero_image: col.hero_image ? `/doors/${col.hero_image}` : '',
+    cover_image: colHero,
+    hero_image: colHero,
     products: (col.products || []).map(p => formatProduct(p, col))
   };
 }
