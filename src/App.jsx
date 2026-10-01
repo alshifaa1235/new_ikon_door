@@ -35,15 +35,24 @@ function parseRoute(pathname) {
     return { page: 'admin', params: { section: parts[1] || 'dashboard' } };
   }
 
-  if (parts[0] === 'collections' && parts[1]) return { page: 'collection-detail', params: { slug: parts[1] } };
-  if ((parts[0] === 'product' || parts[0] === 'products') && parts[1]) return { page: 'product-detail', params: { code: parts.slice(1).join('/') } };
-  if (parts[0] === 'products') return { page: 'collections', params: {} };
-  if (parts[0] === 'about') return { page: 'about', params: {} };
-  if (parts[0] === 'testimonials') return { page: 'testimonials', params: {} };
-  if (parts[0] === 'branches') return { page: 'branches', params: {} };
-  if (parts[0] === 'catalogue') return { page: 'catalogue', params: {} };
-  if (parts[0] === 'contact') return { page: 'contact', params: {} };
-  if (parts[0] === 'request-quote') return { page: 'request-quote', params: {} };
+  if (parts[0] === 'collections') {
+    if (parts[1]) return { page: 'collection-detail', params: { slug: parts[1] } };
+    return { page: 'collections', params: {} };
+  }
+
+  if ((parts[0] === 'product' || parts[0] === 'products') && parts[1]) {
+    return { page: 'product-detail', params: { code: parts.slice(1).join('/') } };
+  }
+  if (parts[0] === 'products' || parts[0] === 'all-doors' || parts[0] === 'doors') {
+    return { page: 'collections', params: {} };
+  }
+
+  if (parts[0] === 'about' || parts[0] === 'about-us') return { page: 'about', params: {} };
+  if (parts[0] === 'testimonials' || parts[0] === 'reviews') return { page: 'testimonials', params: {} };
+  if (parts[0] === 'branches' || parts[0] === 'showrooms' || parts[0] === 'locations') return { page: 'branches', params: {} };
+  if (parts[0] === 'catalogue' || parts[0] === 'catalog') return { page: 'catalogue', params: {} };
+  if (parts[0] === 'contact' || parts[0] === 'contact-us') return { page: 'contact', params: {} };
+  if (parts[0] === 'request-quote' || parts[0] === 'quote' || parts[0] === 'enquiry') return { page: 'request-quote', params: {} };
 
   return { page: '404', params: {} };
 }
