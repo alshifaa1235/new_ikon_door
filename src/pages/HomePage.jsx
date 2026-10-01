@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNav } from '../App';
 import { useSite } from '../context/SiteContext';
 import { setSEO } from '../services/seo';
-import { ArrowRight, MessageSquare, Phone, Cpu, Droplets, Layers, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, MessageSquare, Phone } from 'lucide-react';
 
 // ── Intersection Observer Hook ──
 function useReveal(threshold = 0.15) {
@@ -26,7 +26,7 @@ function RevealDiv({ className = 'reveal', delay = 0, children, style = {} }) {
 
 export default function HomePage() {
   const { navigate } = useNav();
-  const { collections: siteCollections, homepageContent, settings, usps } = useSite();
+  const { collections: siteCollections, homepageContent, settings } = useSite();
   const [heroLoaded, setHeroLoaded] = useState(false);
 
   useEffect(() => {
@@ -50,16 +50,6 @@ export default function HomePage() {
 
   const phone = settings?.phone || '+91 98424 45353';
   const whatsapp = (settings?.whatsapp || '919842445353').replace(/[^0-9]/g, '');
-
-  const getUspIcon = (iconName) => {
-    switch (iconName) {
-      case 'Droplets': return <Droplets size={24} />;
-      case 'Layers': return <Layers size={24} />;
-      case 'ShieldCheck': return <ShieldCheck size={24} />;
-      case 'Cpu':
-      default: return <Cpu size={24} />;
-    }
-  };
 
   return (
     <div>
@@ -322,118 +312,6 @@ export default function HomePage() {
               View All {collections.length || 10} Collections <ArrowRight size={14} />
             </a>
           </RevealDiv>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════
-          4. ARCHITECTURAL RIGOR & USPs
-          ════════════════════════════════════════ */}
-      <section style={{ background: '#0F172A', color: '#fff', padding: 'clamp(4rem, 8vw, 6.5rem) 0', overflow: 'hidden', position: 'relative' }}>
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '600px',
-          height: '600px',
-          background: 'radial-gradient(circle, rgba(184,151,108,0.12) 0%, rgba(15,23,42,0) 70%)',
-          pointerEvents: 'none'
-        }} />
-
-        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <RevealDiv style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto clamp(2.5rem, 5vw, 4rem)' }}>
-            <div className="section-eyebrow" style={{ justifyContent: 'center', color: 'var(--color-gold-light)' }}>
-              Verified Architectural Standards
-            </div>
-            <h2 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(1.8rem, 3.8vw, 2.8rem)',
-              fontWeight: 500,
-              lineHeight: 1.2,
-              letterSpacing: '0.02em',
-              marginBottom: '1rem',
-              color: '#fff'
-            }}>
-              Engineered for endurance.
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem', lineHeight: 1.7 }}>
-              Every New Ikon door conforms to verified dimensional tolerances, kiln-seasoned hardwood cores, and vacuum-bonded membrane adhesion.
-            </p>
-          </RevealDiv>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '1.5rem',
-            position: 'relative'
-          }}>
-            {(usps || []).map((u, idx) => (
-              <RevealDiv key={u.id || idx} delay={idx * 0.1} style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 'var(--radius-md)',
-                padding: '2rem 1.75rem',
-                position: 'relative',
-                transition: 'all 0.3s ease',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '1.25rem'
-                }}>
-                  <div style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    background: 'rgba(184,151,108,0.12)',
-                    color: 'var(--color-gold-light)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid rgba(184,151,108,0.25)'
-                  }}>
-                    {getUspIcon(u.icon)}
-                  </div>
-                  {u.verified && (
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.3rem',
-                      fontSize: '0.68rem',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      color: '#10B981',
-                      background: 'rgba(16,185,129,0.1)',
-                      padding: '0.25rem 0.6rem',
-                      borderRadius: 'var(--radius-pill)',
-                      fontWeight: 600
-                    }}>
-                      <CheckCircle2 size={11} /> Verified
-                    </span>
-                  )}
-                </div>
-                <h3 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '1.15rem',
-                  fontWeight: 500,
-                  marginBottom: '0.65rem',
-                  color: '#fff',
-                  letterSpacing: '0.01em'
-                }}>
-                  {u.title}
-                </h3>
-                <p style={{
-                  fontSize: '0.86rem',
-                  color: 'rgba(255,255,255,0.65)',
-                  lineHeight: 1.65,
-                  margin: 0
-                }}>
-                  {u.description || u.desc}
-                </p>
-              </RevealDiv>
-            ))}
-          </div>
         </div>
       </section>
 
