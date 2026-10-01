@@ -11,6 +11,13 @@ import { supabase, isSupabaseConfigured, authService, storageService, sanitizeEr
 
 const BASE = '';
 
+// Cache-busting version — increment when images are replaced to force fresh downloads
+const IMAGE_VERSION = 'v2';
+function bustCache(url) {
+  if (!url || url.startsWith('http')) return url;
+  return `${url}?${IMAGE_VERSION}`;
+}
+
 // Helper to normalize product codes for flexible matching
 function normalizeCode(str = '') {
   return String(str).toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -25,8 +32,8 @@ function getFallbackCollections() {
     description: c.description || '',
     category: c.category || '',
     tagline: c.tagline || '',
-    cover_image: c.hero_image ? (c.hero_image.startsWith('/') || c.hero_image.startsWith('http') ? c.hero_image : `/doors/${c.hero_image}`) : '',
-    hero_image: c.hero_image ? (c.hero_image.startsWith('/') || c.hero_image.startsWith('http') ? c.hero_image : `/doors/${c.hero_image}`) : '',
+    cover_image: c.hero_image ? bustCache(c.hero_image.startsWith('/') || c.hero_image.startsWith('http') ? c.hero_image : `/doors/${c.hero_image}`) : '',
+    hero_image: c.hero_image ? bustCache(c.hero_image.startsWith('/') || c.hero_image.startsWith('http') ? c.hero_image : `/doors/${c.hero_image}`) : '',
     material: c.material || '',
     finish: c.finish || '',
     thickness: c.thickness || '',
@@ -42,7 +49,7 @@ function getFallbackCollections() {
 function getFallbackCollection(slug) {
   const col = (productsData.collections || []).find(c => c.slug === slug);
   if (!col) return null;
-  const colHero = col.hero_image ? (col.hero_image.startsWith('/') || col.hero_image.startsWith('http') ? col.hero_image : `/doors/${col.hero_image}`) : '';
+  const colHero = col.hero_image ? bustCache(col.hero_image.startsWith('/') || col.hero_image.startsWith('http') ? col.hero_image : `/doors/${col.hero_image}`) : '';
   return {
     ...col,
     cover_image: colHero,
@@ -63,7 +70,7 @@ function formatProduct(p, col = null) {
   }
 
   const primaryImg = p.primary_image || p.image || '';
-  const cleanImg = primaryImg ? (primaryImg.startsWith('/') || primaryImg.startsWith('http') ? primaryImg : `/doors/${primaryImg}`) : '';
+  const cleanImg = primaryImg ? bustCache(primaryImg.startsWith('/') || primaryImg.startsWith('http') ? primaryImg : `/doors/${primaryImg}`) : '';
 
   return {
     ...p,
@@ -77,7 +84,7 @@ function formatProduct(p, col = null) {
     collection_name: p.collection_name || (col ? col.name : ''),
     primary_image: cleanImg,
     image: cleanImg,
-    lifestyle_image: p.lifestyle_image ? (p.lifestyle_image.startsWith('/') || p.lifestyle_image.startsWith('http') ? p.lifestyle_image : `/doors/${p.lifestyle_image}`) : '',
+    lifestyle_image: p.lifestyle_image ? bustCache(p.lifestyle_image.startsWith('/') || p.lifestyle_image.startsWith('http') ? p.lifestyle_image : `/doors/${p.lifestyle_image}`) : '',
     specs,
     features,
     published: p.published !== false && p.published !== 0,

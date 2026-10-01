@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNav } from '../App';
 import { useSite } from '../context/SiteContext';
 import { setSEO } from '../services/seo';
-import { Download, ArrowRight, ChevronRight, Layers } from 'lucide-react';
+import { Download, ArrowRight, ChevronRight, Layers, FileText, ExternalLink } from 'lucide-react';
 
 const FALLBACK_CATALOGUE_COLLECTIONS = [
   { name: 'UV Membrane Doors', slug: 'uv-membrane', desc: 'High-gloss polymer finish with metallic border styling.' },
@@ -81,21 +81,125 @@ export default function CataloguePage() {
       {/* Main Viewer */}
       <section className="section-py" style={{ background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 960 }}>
-          {/* PDF Embed */}
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            overflow: 'hidden',
-            marginBottom: '2rem',
-          }}>
-            <iframe
-              src={pdfUrl}
-              title="New Ikon Doors Master Architectural Catalogue"
-              loading="lazy"
-              style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
-            />
-          </div>
+          {/* PDF Embed — Desktop shows iframe, Mobile shows download card */}
+          {(() => {
+            const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+              return (
+                <div style={{
+                  background: 'linear-gradient(135deg, #1a1816 0%, #2a2520 50%, #1a1816 100%)',
+                  border: '1px solid rgba(184, 134, 11, 0.25)',
+                  borderRadius: 'var(--radius-md)',
+                  overflow: 'hidden',
+                  marginBottom: '2rem',
+                  padding: 'clamp(2rem, 6vw, 3.5rem)',
+                  textAlign: 'center',
+                  color: '#fff',
+                }}>
+                  <div style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: '50%',
+                    background: 'rgba(184, 134, 11, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1.5rem',
+                    border: '1px solid rgba(184, 134, 11, 0.3)',
+                  }}>
+                    <FileText size={32} style={{ color: 'var(--color-gold-light)' }} />
+                  </div>
+                  <h3 style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)',
+                    fontWeight: 500,
+                    marginBottom: '0.75rem',
+                    letterSpacing: '0.02em',
+                  }}>
+                    Official Product Catalogue
+                  </h3>
+                  <p style={{
+                    color: 'rgba(255,255,255,0.65)',
+                    fontSize: '0.88rem',
+                    lineHeight: 1.65,
+                    maxWidth: 400,
+                    margin: '0 auto 1.75rem',
+                  }}>
+                    Download the complete New Ikon Doors catalogue with 130+ door elevations, specifications, and finish options.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: 320, margin: '0 auto' }}>
+                    <a
+                      href={pdfUrl}
+                      download="New_Ikon_Doors_Catalogue.pdf"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.6rem',
+                        padding: '0.95rem 1.5rem',
+                        background: 'var(--color-gold)',
+                        color: '#fff',
+                        borderRadius: 'var(--radius-xs)',
+                        textDecoration: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      <Download size={16} /> Download PDF
+                    </a>
+                    <a
+                      href={pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.6rem',
+                        padding: '0.85rem 1.5rem',
+                        background: 'transparent',
+                        color: 'rgba(255,255,255,0.8)',
+                        borderRadius: 'var(--radius-xs)',
+                        textDecoration: 'none',
+                        fontWeight: 500,
+                        fontSize: '0.82rem',
+                        letterSpacing: '0.04em',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                      }}
+                    >
+                      <ExternalLink size={14} /> Open in Browser
+                    </a>
+                  </div>
+                  <div style={{
+                    marginTop: '1.75rem',
+                    fontSize: '0.72rem',
+                    color: 'rgba(255,255,255,0.4)',
+                    letterSpacing: '0.05em',
+                  }}>
+                    PDF • ~9 MB • Best viewed on desktop
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                marginBottom: '2rem',
+              }}>
+                <iframe
+                  src={pdfUrl}
+                  title="New Ikon Doors Master Architectural Catalogue"
+                  loading="lazy"
+                  style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
+                />
+              </div>
+            );
+          })()}
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '3.5rem' }}>
