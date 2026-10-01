@@ -64,7 +64,25 @@
       ]
     },
     {
-      "source": "/(hero_door_opening\\.(mp4|webm)|hero_door_poster\\.jpg)",
+      "source": "/hero_door_opening.mp4",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/hero_door_opening.webm",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/hero_door_poster.jpg",
       "headers": [
         {
           "key": "Cache-Control",

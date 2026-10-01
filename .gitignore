@@ -43,3 +43,8 @@ lerna-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+.vercel
+
+supabase/.temp/
+scripts/patch_hostname.cjs
