@@ -29,25 +29,45 @@ const SIDEBAR_ITEMS = [
 
 export default function AdminLayout({ section }) {
   const { navigate } = useNav();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nid_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     setSEO({ title: 'Admin Dashboard | New Ikon Doors', robots: 'noindex, nofollow' });
     api.me().then(usr => {
-      if (!usr) {
-        navigate('/admin/login', true);
-      } else {
+      if (usr) {
         setUser(usr);
+        try {
+          localStorage.setItem('nid_user', JSON.stringify(usr));
+        } catch {}
+      } else {
+        const saved = localStorage.getItem('nid_user');
+        if (!saved) {
+          navigate('/admin/login', true);
+        }
       }
     }).catch(() => {
-      navigate('/admin/login', true);
+      const saved = localStorage.getItem('nid_user');
+      if (!saved) {
+        navigate('/admin/login', true);
+      }
     });
   }, []);
 
   const handleLogout = async () => {
-    await api.logout().catch(() => {});
-    localStorage.removeItem('nid_user');
+    try {
+      await api.logout();
+    } catch {}
+    try {
+      localStorage.removeItem('nid_user');
+    } catch {}
     navigate('/admin/login', true);
   };
 

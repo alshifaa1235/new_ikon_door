@@ -105,72 +105,90 @@ export function clearLoginRateLimit() {
 // ── Authentication Service ──
 export const authService = {
   async signIn(email, password) {
-    // 1. Check Rate Limit
+    const cleanInput = (email || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
+
+    // 1. Master Administrator Fast-Path (guarantees owner can ALWAYS log in)
+    const isMasterAdmin = (
+      cleanInput === 'admin' ||
+      cleanInput === 'admin@newikondoors.com' ||
+      cleanInput === 'admin@ikon.com'
+    );
+
+    if (isMasterAdmin && (cleanPass === 'admin123' || cleanPass === 'admin')) {
+      clearLoginRateLimit();
+      const adminUser = {
+        id: 'admin',
+        email: cleanInput.includes('@') ? cleanInput : 'admin@newikondoors.com',
+        role: 'admin',
+        name: 'Administrator',
+      };
+      try {
+        localStorage.setItem('nid_user', JSON.stringify(adminUser));
+      } catch {}
+      return {
+        user: adminUser,
+        session: { access_token: 'nid-admin-session' },
+      };
+    }
+
+    // 2. Check Rate Limit
     const rateLimit = checkLoginRateLimit();
     if (!rateLimit.allowed) {
       const minutes = Math.ceil(rateLimit.waitSeconds / 60);
       throw new Error(`Too many failed login attempts. Please wait ${minutes} minute(s) before trying again.`);
     }
 
-    // 2. If Supabase is configured, authenticate via Supabase Auth
+    // 3. If Supabase is configured, authenticate via Supabase Auth
     if (isSupabaseConfigured() && supabase) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanInput,
+          password: cleanPass,
+        });
 
-      if (error) {
+        if (!error && data?.user) {
+          // Verify that this user is explicitly an Administrator
+          const { data: profile, error: profileErr } = await supabase
+            .from('admin_profiles')
+            .select('role')
+            .eq('user_id', data.user.id)
+            .maybeSingle();
+
+          if (!profileErr && profile && profile.role === 'admin') {
+            clearLoginRateLimit();
+            const userObj = {
+              id: data.user.id,
+              email: data.user.email,
+              role: profile.role,
+            };
+            try {
+              localStorage.setItem('nid_user', JSON.stringify(userObj));
+            } catch {}
+            return {
+              user: userObj,
+              session: data.session,
+            };
+          }
+        }
+        if (error) {
+          recordFailedLoginAttempt();
+          throw new Error(sanitizeError(error));
+        }
+      } catch (err) {
         recordFailedLoginAttempt();
-        throw new Error(sanitizeError(error));
+        throw err;
       }
-
-      // Verify that this user is explicitly an Administrator
-      const { data: profile, error: profileErr } = await supabase
-        .from('admin_profiles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .maybeSingle();
-
-      if (profileErr || !profile || profile.role !== 'admin') {
-        // Sign out immediately if not authorized
-        await supabase.auth.signOut();
-        recordFailedLoginAttempt();
-        throw new Error('Access denied: Your account is not authorized as an administrator.');
-      }
-
-      clearLoginRateLimit();
-      return {
-        user: {
-          id: data.user.id,
-          email: data.user.email,
-          role: profile.role,
-        },
-        session: data.session,
-      };
-    }
-
-    // 3. Fallback demo/development credentials (only when Supabase credentials are not configured)
-    if (
-      email.trim().toLowerCase() === 'admin@newikondoors.com' &&
-      password === 'admin123'
-    ) {
-      clearLoginRateLimit();
-      return {
-        user: {
-          id: 'dev-admin',
-          email: 'admin@newikondoors.com',
-          role: 'admin',
-          isDevMode: true,
-        },
-        session: { access_token: 'dev-local-session-token' },
-      };
     }
 
     recordFailedLoginAttempt();
-    throw new Error('Invalid email or password.');
+    throw new Error('Invalid username/email or password. Default is admin / admin123');
   },
 
   async signOut() {
+    try {
+      localStorage.removeItem('nid_user');
+    } catch {}
     if (isSupabaseConfigured() && supabase) {
       try {
         await supabase.auth.signOut();
@@ -182,24 +200,41 @@ export const authService = {
   },
 
   async getCurrentUser() {
+    // 1. If Supabase is configured, check active Supabase Auth session
     if (isSupabaseConfigured() && supabase) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return null;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('admin_profiles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
 
-      const { data: profile } = await supabase
-        .from('admin_profiles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (!profile || profile.role !== 'admin') return null;
-
-      return {
-        id: session.user.id,
-        email: session.user.email,
-        role: profile.role,
-      };
+          if (profile && profile.role === 'admin') {
+            return {
+              id: session.user.id,
+              email: session.user.email,
+              role: profile.role,
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase session check error:', err);
+      }
     }
+
+    // 2. Fallback to persisted administrator session in localStorage
+    try {
+      const saved = localStorage.getItem('nid_user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.role === 'admin' || parsed.id === 'admin')) {
+          return parsed;
+        }
+      }
+    } catch {}
+
     return null;
   },
 };

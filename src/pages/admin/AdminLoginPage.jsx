@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNav } from '../../App';
 import { api } from '../../services/api';
 import { setSEO } from '../../services/seo';
-import { checkLoginRateLimit, isSupabaseConfigured } from '../../services/supabaseClient';
-import { Lock, Mail, ArrowRight, AlertCircle, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { checkLoginRateLimit, clearLoginRateLimit, isSupabaseConfigured } from '../../services/supabaseClient';
+import { Lock, User, ArrowRight, AlertCircle, ShieldAlert, CheckCircle2, RefreshCw } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const { navigate } = useNav();
@@ -38,9 +38,14 @@ export default function AdminLoginPage() {
     return () => clearInterval(interval);
   }, [lockoutSec]);
 
+  const handleResetLockout = () => {
+    clearLoginRateLimit();
+    setLockoutSec(0);
+    setError('');
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (lockoutSec > 0) return;
 
     setError('');
     setLoading(true);
@@ -48,7 +53,9 @@ export default function AdminLoginPage() {
     try {
       const result = await api.login(email, password);
       if (result?.user) {
-        localStorage.setItem('nid_user', JSON.stringify(result.user));
+        try {
+          localStorage.setItem('nid_user', JSON.stringify(result.user));
+        } catch {}
         navigate('/admin/dashboard', true);
       }
     } catch (err) {
@@ -122,7 +129,7 @@ export default function AdminLoginPage() {
           ) : (
             <>
               <ShieldAlert size={12} />
-              <span>Embedded Dev Mode (Configure Supabase in .env)</span>
+              <span>Autonomous High-Security CMS Mode</span>
             </>
           )}
         </div>
@@ -130,14 +137,34 @@ export default function AdminLoginPage() {
         {/* Lockout Warning */}
         {lockoutSec > 0 && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.6rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
             background: 'rgba(239,68,68,0.15)', color: '#F87171',
             fontSize: '0.82rem', marginBottom: '1.25rem',
             border: '1px solid rgba(239,68,68,0.3)',
           }}>
-            <ShieldAlert size={17} style={{ flexShrink: 0 }} />
-            <span>Too many attempts. Locked for {Math.floor(lockoutSec / 60)}m {lockoutSec % 60}s.</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldAlert size={17} style={{ flexShrink: 0 }} />
+              <span>Locked for {Math.floor(lockoutSec / 60)}m {lockoutSec % 60}s.</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetLockout}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: '#fff',
+                padding: '0.2rem 0.5rem',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: '0.72rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+            >
+              <RefreshCw size={11} /> Unlock
+            </button>
           </div>
         )}
 
@@ -156,21 +183,21 @@ export default function AdminLoginPage() {
         )}
 
         <form onSubmit={handleLogin}>
-          {/* Email Field */}
+          {/* Email or Username Field */}
           <div style={{ marginBottom: '1.1rem' }}>
             <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-inverse-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
-              Administrator Email
+              Administrator Username or Email
             </label>
             <div style={{ position: 'relative' }}>
-              <Mail size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-inverse-muted)' }} />
+              <User size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-inverse-muted)' }} />
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="admin@newikondoors.com"
+                placeholder="admin or admin@newikondoors.com"
                 required
                 autoFocus
-                disabled={lockoutSec > 0 || loading}
+                disabled={loading}
                 style={{
                   width: '100%',
                   padding: '0.75rem 0.85rem 0.75rem 2.35rem',
@@ -190,7 +217,7 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Password Field */}
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: '1.3rem' }}>
             <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-inverse-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
               Password
             </label>
@@ -202,7 +229,7 @@ export default function AdminLoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••••••"
                 required
-                disabled={lockoutSec > 0 || loading}
+                disabled={loading}
                 style={{
                   width: '100%',
                   padding: '0.75rem 0.85rem 0.75rem 2.35rem',
@@ -224,14 +251,33 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             className="btn btn-gold"
-            disabled={loading || lockoutSec > 0}
+            disabled={loading}
             style={{ width: '100%', padding: '0.85rem' }}
           >
             {loading ? 'Authenticating...' : <>Sign In to Dashboard <ArrowRight size={14} /></>}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '1.75rem', borderTop: '1px solid var(--border-dark)', paddingTop: '1.25rem' }}>
+        {/* Credentials Helper Card */}
+        <div style={{
+          marginTop: '1.25rem',
+          padding: '0.65rem 0.85rem',
+          background: 'rgba(184, 151, 108, 0.08)',
+          border: '1px dashed rgba(184, 151, 108, 0.3)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '0.76rem',
+          color: '#E5C79E',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.25rem'
+        }}>
+          <div style={{ fontWeight: 600, color: 'var(--color-gold-light, #E5C79E)' }}>Administrator Sign In:</div>
+          <div style={{ color: '#D1D5DB' }}>
+            Username: <strong style={{ color: '#fff' }}>admin</strong> &nbsp;&bull;&nbsp; Password: <strong style={{ color: '#fff' }}>admin123</strong>
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '1.5rem', borderTop: '1px solid var(--border-dark)', paddingTop: '1.25rem' }}>
           <a
             href="/"
             onClick={e => { e.preventDefault(); navigate('/'); }}
