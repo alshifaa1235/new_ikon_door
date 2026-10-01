@@ -20,7 +20,8 @@ const defaultSettings = {
 const defaultHomepage = {
   hero: {
     title: 'Doors that define the space.',
-    subtitle: 'Engineered with CNC precision, kiln-seasoned hardwood cores, and vacuum-bonded membrane technology. Wholesale door manufacturer and supplier in Trichy, Tamil Nadu.',
+    subtitle: '',
+    description: 'Engineered with CNC precision, kiln-seasoned hardwood cores, and vacuum-bonded membrane technology. Wholesale door manufacturer and supplier in Trichy, Tamil Nadu.',
     badge: 'New Ikon Doors • Manufacturing & Wholesale HQ',
     cta_primary: 'Explore Collections',
     cta_secondary: 'Request a Quote'

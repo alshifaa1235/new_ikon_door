@@ -42,8 +42,8 @@ export default function HomePage() {
   const editorialCollections = collections.slice(0, 4);
 
   const heroBadge = homepageContent?.hero_badge || homepageContent?.hero?.badge || 'New Ikon Doors • Manufacturing & Wholesale HQ';
-  const heroTitle = homepageContent?.hero_title || homepageContent?.hero?.title || 'New Ikon Doors';
-  const heroSubtitle = homepageContent?.hero_subtitle || homepageContent?.hero?.subtitle || 'Doors that define the space.';
+  const heroTitle = homepageContent?.hero_title || homepageContent?.hero?.title || 'Doors that define the space.';
+  const heroSubtitle = homepageContent?.hero_subtitle || homepageContent?.hero?.subtitle || '';
   const heroDesc = homepageContent?.hero_description || homepageContent?.hero?.description || 'Engineered with CNC precision, kiln-seasoned hardwood cores, and vacuum-bonded membrane technology. Wholesale door manufacturer and supplier in Trichy, Tamil Nadu.';
   const introStatement = homepageContent?.intro_statement || homepageContent?.intro?.statement || 'Premium doors designed to become part of the architecture.';
   const introDesc = homepageContent?.intro_description || homepageContent?.intro?.description || 'New Ikon Doors combines advanced CNC routing technology with traditional timber craftsmanship. Dealers in PVC, Teak, Rubber Wood, Mica, and Plywoods — serving architects, builders, and interior designers across Tamil Nadu.';
@@ -146,10 +146,15 @@ export default function HomePage() {
             transform: heroLoaded ? 'translateY(0)' : 'translateY(20px)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.5s',
           }}>
-            {heroTitle}<br />
-            <span style={{ fontSize: 'clamp(1.35rem, 3.2vw, 2.4rem)', color: 'rgba(255,255,255,0.85)', display: 'block', marginTop: '0.4rem', fontWeight: 400 }}>
-              {heroSubtitle}
-            </span>
+            {heroTitle}
+            {heroSubtitle && heroSubtitle.trim() && heroSubtitle.trim() !== heroDesc.trim() && heroSubtitle.trim() !== heroTitle.trim() && (
+              <>
+                <br />
+                <span style={{ fontSize: 'clamp(1.35rem, 3.2vw, 2.4rem)', color: 'rgba(255,255,255,0.85)', display: 'block', marginTop: '0.4rem', fontWeight: 400 }}>
+                  {heroSubtitle}
+                </span>
+              </>
+            )}
           </h1>
 
           <p style={{
