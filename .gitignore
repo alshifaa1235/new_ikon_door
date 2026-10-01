@@ -6,7 +6,15 @@ node_modules/
 # Production build outputs
 dist/
 dist-ssr/
+# Environment and secret files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env*.local
 *.local
+
 
 # Python cache & virtual environments
 __pycache__/

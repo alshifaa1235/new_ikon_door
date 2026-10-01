@@ -37,11 +37,19 @@ const defaultHomepage = {
   ]
 };
 
+const defaultUsps = [
+  { id: 1, title: 'In-House CNC Precision', description: 'Computer numerical control routing and vacuum-press membrane bonding for crisp geometric motifs and structural consistency.', icon: 'Cpu', verified: true, published: true, sort_order: 1 },
+  { id: 2, title: 'Water & Moisture Resistance', description: 'Multi-layer protective polymer coats and WPVC compositions engineered to endure humid regional climates.', icon: 'Droplets', verified: true, published: true, sort_order: 2 },
+  { id: 3, title: 'Architectural Customization', description: 'Custom door dimensions, distinct wood-grain tones, authentic marble veining, and metallic stainless steel inlays.', icon: 'Layers', verified: true, published: true, sort_order: 3 },
+  { id: 4, title: 'Wholesale Group Synergies', description: 'Direct coordination with sister divisions Classic Ply & Lam and Royal Lam & Ply for consolidated trade supply.', icon: 'ShieldCheck', verified: true, published: true, sort_order: 4 }
+];
+
 const SiteContext = createContext({
   settings: defaultSettings,
   collections: [],
   homepageContent: defaultHomepage,
-  catalogue: { title: 'New Ikon Doors Catalogue', file_url: '/catalogue/NEW_IKON_DOORS.pdf', version: '1.0' },
+  catalogue: { title: 'New Ikon Doors Catalogue', file_url: '/catalogue/NEW_IKON_DOORS.pdf', version: '2026.1' },
+  usps: defaultUsps,
   refreshSiteData: () => {},
   loading: true
 });
@@ -58,19 +66,21 @@ export function SiteProvider({ children }) {
   })));
   const [homepageContent, setHomepageContent] = useState(defaultHomepage);
   const [catalogue, setCatalogue] = useState({
-    title: 'New Ikon Doors Catalogue',
+    title: 'New Ikon Doors Official Catalogue',
     file_url: '/catalogue/NEW_IKON_DOORS.pdf',
-    version: '1.0'
+    version: '2026.1'
   });
+  const [usps, setUsps] = useState(defaultUsps);
   const [loading, setLoading] = useState(true);
 
   const refreshSiteData = useCallback(async () => {
     try {
-      const [fetchedSettings, fetchedCollections, fetchedHomepage, fetchedCatalogue] = await Promise.allSettled([
+      const [fetchedSettings, fetchedCollections, fetchedHomepage, fetchedCatalogue, fetchedUsps] = await Promise.allSettled([
         api.getSettings(),
         api.getCollections(),
         api.getHomepage(),
-        api.getCatalogue()
+        api.getCatalogue(),
+        api.getUsps()
       ]);
 
       if (fetchedSettings.status === 'fulfilled' && fetchedSettings.value) {
@@ -96,8 +106,12 @@ export function SiteProvider({ children }) {
         }));
       }
 
-      if (fetchedCatalogue.status === 'fulfilled' && fetchedCatalogue.value && fetchedCatalogue.value.file_url) {
+      if (fetchedCatalogue.status === 'fulfilled' && fetchedCatalogue.value && (fetchedCatalogue.value.file_url || fetchedCatalogue.value.pdf_url)) {
         setCatalogue(fetchedCatalogue.value);
+      }
+
+      if (fetchedUsps.status === 'fulfilled' && Array.isArray(fetchedUsps.value) && fetchedUsps.value.length > 0) {
+        setUsps(fetchedUsps.value);
       }
     } catch (err) {
       console.warn('Error loading dynamic site data:', err);
@@ -129,6 +143,7 @@ export function SiteProvider({ children }) {
       collections,
       homepageContent,
       catalogue,
+      usps,
       refreshSiteData,
       loading
     }}>

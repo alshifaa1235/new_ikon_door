@@ -17,8 +17,27 @@ import {
   sbCreateEnquiry,
   sbGetEnquiries,
   sbUpdateEnquiry,
-  sbDeleteEnquiry
+  sbDeleteEnquiry,
+  sbGetUsps
 } from '../server/supabase.js';
+
+// In-memory rate limiting map for serverless execution
+const ipRateLimits = new Map();
+function checkServerRateLimit(ip, maxAttempts = 5, windowMs = 15 * 60 * 1000) {
+  const now = Date.now();
+  let record = ipRateLimits.get(ip);
+  if (!record || now - record.startTime > windowMs) {
+    record = { count: 1, startTime: now };
+    ipRateLimits.set(ip, record);
+    return { allowed: true };
+  }
+  record.count++;
+  if (record.count > maxAttempts) {
+    const retrySec = Math.ceil((record.startTime + windowMs - now) / 1000);
+    return { allowed: false, retrySec };
+  }
+  return { allowed: true };
+}
 
 // Resolve directory
 const __filename = fileURLToPath(import.meta.url);
@@ -321,21 +340,37 @@ export default async function handler(req, res) {
       return sendJson(res, 200, testimonialsData || []);
     }
 
-    // 8. Digital Catalogue
+    // 8. USPs (Verified Architectural Features)
+    if (pathname === '/api/usps' && method === 'GET') {
+      if (hasSupabase) {
+        const usps = await sbGetUsps(true);
+        if (usps && usps.length > 0) return sendJson(res, 200, usps);
+      }
+      return sendJson(res, 200, [
+        { id: 1, title: 'In-House CNC Precision', description: 'Computer numerical control routing and vacuum-press membrane bonding for crisp geometric motifs and structural consistency.', icon: 'Cpu', verified: true, published: true, sort_order: 1 },
+        { id: 2, title: 'Water & Moisture Resistance', description: 'Multi-layer protective polymer coats and WPVC compositions engineered to endure humid regional climates.', icon: 'Droplets', verified: true, published: true, sort_order: 2 },
+        { id: 3, title: 'Architectural Customization', description: 'Custom door dimensions, distinct wood-grain tones, authentic marble veining, and metallic stainless steel inlays.', icon: 'Layers', verified: true, published: true, sort_order: 3 },
+        { id: 4, title: 'Wholesale Group Synergies', description: 'Direct coordination with sister divisions Classic Ply & Lam and Royal Lam & Ply for consolidated trade supply.', icon: 'ShieldCheck', verified: true, published: true, sort_order: 4 }
+      ]);
+    }
+
+    // 9. Digital Catalogue
     if (pathname === '/api/catalogue' && method === 'GET') {
       if (hasSupabase) {
         const cat = await sbGetCatalogue();
         if (cat) return sendJson(res, 200, cat);
       }
       return sendJson(res, 200, {
-        title: 'New Ikon Doors Catalogue',
+        title: 'New Ikon Doors Official Catalogue',
         file_url: '/catalogue/NEW_IKON_DOORS.pdf',
-        file_size: '48 MB',
-        active: 1
+        pdf_url: '/catalogue/NEW_IKON_DOORS.pdf',
+        file_size: '9.0 MB',
+        active: 1,
+        published: true
       });
     }
 
-    // 9. Site Settings
+    // 10. Site Settings
     if (pathname === '/api/settings' && method === 'GET') {
       if (hasSupabase) {
         const settings = await sbGetSiteSettings();
@@ -343,19 +378,25 @@ export default async function handler(req, res) {
       }
       return sendJson(res, 200, {
         company_name: companyData.name || 'New Ikon Doors',
-        tagline: companyData.tagline || 'Crafting Impressions That Last',
-        phone: companyData.phone || '+91 99447 99988',
-        phone_alt: companyData.phoneAlt || '+91 98424 55566',
-        whatsapp: companyData.whatsapp || '+91 99447 99988',
-        email: companyData.email || 'info@newikondoors.com',
-        address: companyData.address || 'Erode, Tamil Nadu, India',
-        specialization: companyData.specialization || 'Premium Architectural & Designer Doors',
-        machinery: companyData.machinery || 'German CNC routing & hydraulic membrane pressing technology'
+        tagline: companyData.tagline || 'Elevate Your Space • Upgrade Your Entrance',
+        phone: companyData.phone || '+91 98424 45353',
+        phone_alt: companyData.phoneAlt || '+91 98424 43353',
+        whatsapp: companyData.whatsapp || '9842445353',
+        email: companyData.email || 'abbas43353@gmail.com',
+        address: companyData.address || 'Plot No. 45 C/A1, Thanjavur Road, Near Mariyamman Kovil Bus Stop, Tharanallur, Trichy - 620008, Tamil Nadu, India',
+        specialization: companyData.specialization || 'Dealers in PVC, Teak, Rubber Wood, Mica, Plywoods',
+        machinery: companyData.machinery || 'High-Precision CNC Automated Routing & Vacuum Membrane Technology'
       });
     }
 
-    // 10. Enquiry / Quote Submission
+    // 11. Enquiry / Quote Submission (Rate-limited)
     if (pathname === '/api/enquiries' && method === 'POST') {
+      const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+      const rl = checkServerRateLimit(`enq_${clientIp}`, 10, 60 * 60 * 1000);
+      if (!rl.allowed) {
+        return sendJson(res, 429, { error: 'Too many enquiry submissions. Please try again later.' });
+      }
+
       const body = await getRequestBody(req);
       if (!body.name || (!body.phone && !body.email)) {
         return sendJson(res, 400, { error: 'Name and at least one contact method (phone or email) are required' });
@@ -372,7 +413,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // Memory fallback for demo / static deployments
       const newEnquiry = {
         id: Date.now(),
         ...body,
@@ -388,20 +428,26 @@ export default async function handler(req, res) {
       });
     }
 
-    // 11. Admin Auth & Enquiries
+    // 12. Admin Auth & Enquiries (Rate-limited)
     if (pathname === '/api/auth/login' && method === 'POST') {
+      const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+      const rl = checkServerRateLimit(`auth_${clientIp}`, 5, 15 * 60 * 1000);
+      if (!rl.allowed) {
+        return sendJson(res, 429, { error: `Too many login attempts. Please wait ${rl.retrySec} seconds.` });
+      }
+
       const body = await getRequestBody(req);
-      // Hardened check: default or configured admin credentials
       const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
       const adminUser = process.env.ADMIN_USERNAME || 'admin';
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@newikondoors.com';
 
-      if (body.username === adminUser && body.password === adminPass) {
+      if ((body.username === adminUser || body.email === adminEmail) && body.password === adminPass) {
         return sendJson(res, 200, {
           token: 'nid_session_' + Buffer.from(Date.now().toString()).toString('hex'),
-          user: { id: 1, username: adminUser, display_name: 'Administrator' }
+          user: { id: 1, email: adminEmail, username: adminUser, role: 'admin', display_name: 'Administrator' }
         });
       }
-      return sendJson(res, 401, { error: 'Invalid username or password' });
+      return sendJson(res, 401, { error: 'Invalid email/username or password' });
     }
 
     if (pathname === '/api/auth/me' && method === 'GET') {
@@ -435,7 +481,7 @@ export default async function handler(req, res) {
     return sendJson(res, 404, { error: `Endpoint ${pathname} not found` });
 
   } catch (error) {
-    console.error('[API Handler Exception]', error);
-    return sendJson(res, 500, { error: 'Internal Server Error', message: error.message });
+    console.error('[API Handler Exception]', error?.message || error);
+    return sendJson(res, 500, { error: 'Internal Server Error', message: 'An unexpected error occurred. Please try again later.' });
   }
 }

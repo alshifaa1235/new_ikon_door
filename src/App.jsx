@@ -36,8 +36,8 @@ function parseRoute(pathname) {
   }
 
   if (parts[0] === 'collections' && parts[1]) return { page: 'collection-detail', params: { slug: parts[1] } };
-  if (parts[0] === 'collections') return { page: 'collections', params: {} };
-  if (parts[0] === 'product' && parts[1]) return { page: 'product-detail', params: { code: parts.slice(1).join('/') } };
+  if ((parts[0] === 'product' || parts[0] === 'products') && parts[1]) return { page: 'product-detail', params: { code: parts.slice(1).join('/') } };
+  if (parts[0] === 'products') return { page: 'collections', params: {} };
   if (parts[0] === 'about') return { page: 'about', params: {} };
   if (parts[0] === 'testimonials') return { page: 'testimonials', params: {} };
   if (parts[0] === 'branches') return { page: 'branches', params: {} };

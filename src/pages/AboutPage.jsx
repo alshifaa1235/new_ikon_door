@@ -6,7 +6,17 @@ import { Cpu, Droplets, ShieldCheck, Layers, ArrowRight, MessageSquare, Phone, C
 
 export default function AboutPage() {
   const { navigate } = useNav();
-  const { settings, collections } = useSite();
+  const { settings, collections, usps } = useSite();
+
+  const getUspIcon = (iconName) => {
+    switch (iconName) {
+      case 'Droplets': return <Droplets size={28} />;
+      case 'Layers': return <Layers size={28} />;
+      case 'ShieldCheck': return <ShieldCheck size={28} />;
+      case 'Cpu':
+      default: return <Cpu size={28} />;
+    }
+  };
 
   useEffect(() => {
     setSEO({
@@ -105,16 +115,11 @@ export default function AboutPage() {
             <h2 className="section-title">Quality. Design. Material. Range.</h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-            {[
-              { icon: <Cpu size={28} />, title: 'In-House CNC Precision', desc: 'Computer numerical control routing and vacuum-press membrane bonding for crisp geometric motifs and structural consistency.' },
-              { icon: <Droplets size={28} />, title: 'Water & Moisture Resistance', desc: 'Multi-layer protective polymer coats and WPVC compositions engineered to endure humid regional climates.' },
-              { icon: <Layers size={28} />, title: 'Architectural Customization', desc: 'Custom door dimensions, distinct wood-grain tones, authentic marble veining, and metallic stainless steel inlays.' },
-              { icon: <ShieldCheck size={28} />, title: 'Wholesale Group Synergies', desc: 'Direct coordination with sister divisions Classic Ply & Lam and Royal Lam & Ply for consolidated trade supply.' },
-            ].map((f, i) => (
-              <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '2rem 1.75rem' }}>
-                <div style={{ color: 'var(--color-gold)', marginBottom: '1.25rem' }}>{f.icon}</div>
+            {(usps || []).map((f, i) => (
+              <div key={f.id || i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '2rem 1.75rem' }}>
+                <div style={{ color: 'var(--color-gold)', marginBottom: '1.25rem' }}>{getUspIcon(f.icon)}</div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 500, marginBottom: '0.65rem', letterSpacing: '0.01em' }}>{f.title}</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{f.desc}</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{f.description || f.desc}</p>
               </div>
             ))}
           </div>

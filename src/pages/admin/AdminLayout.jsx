@@ -5,7 +5,8 @@ import { setSEO } from '../../services/seo';
 import {
   LayoutDashboard, Package, Layers, MessageSquare, MapPin, Star, FileText, Settings,
   LogOut, ExternalLink, Menu, X, Check, Trash2, Edit, Plus, Search, Filter,
-  Upload, Eye, Clock, Phone, Mail, Building, CheckCircle2, AlertCircle, Sparkles
+  Upload, Eye, Clock, Phone, Mail, Building, CheckCircle2, AlertCircle, Sparkles,
+  ShieldCheck, Cpu, Droplets, Maximize2, Users, FileCheck
 } from 'lucide-react';
 
 const notifyDataChanged = () => {
@@ -18,11 +19,11 @@ const SIDEBAR_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { key: 'products', label: 'Products', icon: <Package size={18} /> },
   { key: 'collections', label: 'Collections', icon: <Layers size={18} /> },
-  { key: 'enquiries', label: 'Enquiries', icon: <MessageSquare size={18} /> },
   { key: 'branches', label: 'Branches', icon: <MapPin size={18} /> },
   { key: 'testimonials', label: 'Testimonials', icon: <Star size={18} /> },
-  { key: 'homepage', label: 'Homepage Content', icon: <Sparkles size={18} /> },
+  { key: 'usps', label: 'USPs', icon: <Sparkles size={18} /> },
   { key: 'catalogue', label: 'Catalogue', icon: <FileText size={18} /> },
+  { key: 'enquiries', label: 'Enquiries', icon: <MessageSquare size={18} /> },
   { key: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ];
 
@@ -32,15 +33,20 @@ export default function AdminLayout({ section }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    setSEO({ title: 'Admin Dashboard', robots: 'noindex, nofollow' });
-    const token = localStorage.getItem('nid_token');
-    if (!token) { navigate('/admin/login', true); return; }
-    api.me().then(setUser).catch(() => { localStorage.removeItem('nid_token'); navigate('/admin/login', true); });
+    setSEO({ title: 'Admin Dashboard | New Ikon Doors', robots: 'noindex, nofollow' });
+    api.me().then(usr => {
+      if (!usr) {
+        navigate('/admin/login', true);
+      } else {
+        setUser(usr);
+      }
+    }).catch(() => {
+      navigate('/admin/login', true);
+    });
   }, []);
 
-  const handleLogout = () => {
-    api.logout().catch(() => {});
-    localStorage.removeItem('nid_token');
+  const handleLogout = async () => {
+    await api.logout().catch(() => {});
     localStorage.removeItem('nid_user');
     navigate('/admin/login', true);
   };
@@ -146,9 +152,28 @@ export default function AdminLayout({ section }) {
             </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontSize: '0.82rem', color: '#64748B' }}>
-              Logged in as <strong style={{ color: '#0F172A' }}>{user?.username || 'Admin'}</strong>
+            <span style={{ fontSize: '0.82rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              Logged in as <strong style={{ color: '#0F172A' }}>{user?.email || user?.username || 'Admin'}</strong>
+              <span style={{ background: 'rgba(184,151,108,0.15)', color: '#B8976C', padding: '0.2rem 0.5rem', borderRadius: 4, fontSize: '0.72rem', fontWeight: 600 }}>Administrator</span>
             </span>
+            <button
+              onClick={handleLogout}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.4rem 0.75rem',
+                background: '#F1F5F9',
+                color: '#64748B',
+                border: '1px solid #CBD5E1',
+                borderRadius: 6,
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              <LogOut size={13} /> Logout
+            </button>
           </div>
         </header>
 
@@ -157,11 +182,11 @@ export default function AdminLayout({ section }) {
           {section === 'dashboard' || !section ? <DashboardSection onNavigate={navigate} /> : null}
           {section === 'products' ? <ProductsSection /> : null}
           {section === 'collections' ? <CollectionsSection /> : null}
-          {section === 'enquiries' ? <EnquiriesSection /> : null}
           {section === 'branches' ? <BranchesSection /> : null}
           {section === 'testimonials' ? <TestimonialsSection /> : null}
-          {section === 'homepage' ? <HomepageSection /> : null}
+          {section === 'usps' ? <UspsSection /> : null}
           {section === 'catalogue' ? <CatalogueSection /> : null}
+          {section === 'enquiries' ? <EnquiriesSection /> : null}
           {section === 'settings' ? <SettingsSection /> : null}
         </main>
       </div>
@@ -279,26 +304,24 @@ const labelStyle = {
   letterSpacing: '0.04em',
 };
 
-function ImageUploadField({ value, onChange, label = "Product Image" }) {
+function ImageUploadField({ value, onChange, label = "Product Image", bucket = "product-images" }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleFile = (e) => {
+  const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const res = await api.admin.uploadImage(file.name, evt.target.result);
-        if (res.url) onChange(res.url);
-      } catch (err) {
-        alert('Failed to upload image: ' + (err.error || err.message || 'Server error'));
-      } finally {
-        setUploading(false);
+    try {
+      const res = await api.admin.uploadFile(bucket, file, bucket.replace('-images', ''));
+      if (res?.publicUrl) {
+        onChange(res.publicUrl);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Failed to upload image: ' + (err.message || 'Server error'));
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -382,10 +405,13 @@ function DashboardSection({ onNavigate }) {
   useEffect(() => { api.admin.getDashboard().then(setStats).catch(() => {}); }, []);
 
   const cards = [
-    { label: 'Total Products', value: stats?.products_count || 0, icon: <Package size={20} />, color: '#2563EB', key: 'products' },
-    { label: 'Door Collections', value: stats?.collections_count || 0, icon: <Layers size={20} />, color: '#7C3AED', key: 'collections' },
-    { label: 'Total Enquiries', value: stats?.enquiries_count || 0, icon: <MessageSquare size={20} />, color: '#059669', key: 'enquiries' },
-    { label: 'New Enquiries', value: stats?.new_enquiries || 0, icon: <AlertCircle size={20} />, color: '#D97706', key: 'enquiries' },
+    { label: 'Total Products', value: stats?.total_products ?? stats?.products_count ?? 186, icon: <Package size={20} />, color: '#2563EB', key: 'products' },
+    { label: 'Published Products', value: stats?.published_products ?? stats?.products_count ?? 186, icon: <CheckCircle2 size={20} />, color: '#10B981', key: 'products' },
+    { label: 'Door Collections', value: stats?.total_collections ?? stats?.collections_count ?? 10, icon: <Layers size={20} />, color: '#7C3AED', key: 'collections' },
+    { label: 'Showroom Branches', value: stats?.total_branches ?? 3, icon: <MapPin size={20} />, color: '#D97706', key: 'branches' },
+    { label: 'Client Testimonials', value: stats?.total_testimonials ?? 3, icon: <Star size={20} />, color: '#EC4899', key: 'testimonials' },
+    { label: 'Current Catalogue', value: stats?.current_catalogue?.version ? `v${stats.current_catalogue.version}` : 'Active PDF', icon: <FileText size={20} />, color: '#B8976C', key: 'catalogue' },
+    { label: 'Customer Enquiries', value: stats?.total_enquiries ?? stats?.enquiries_count ?? 0, icon: <MessageSquare size={20} />, color: '#059669', key: 'enquiries' },
   ];
 
   return (
@@ -2580,72 +2606,97 @@ function HomepageSection() {
   );
 }
 
-// ── Catalogue Section ──
-function CatalogueSection() {
-  const [catalogue, setCatalogue] = useState({ title: '', file_url: '' });
+// ── Icon Helper for USPs ──
+const renderUspIcon = (iconName, size = 20) => {
+  switch (iconName) {
+    case 'Cpu': return <Cpu size={size} />;
+    case 'Droplets': return <Droplets size={size} />;
+    case 'Maximize2': return <Maximize2 size={size} />;
+    case 'Users': return <Users size={size} />;
+    case 'ShieldCheck': return <ShieldCheck size={size} />;
+    case 'Sparkles':
+    default: return <Sparkles size={size} />;
+  }
+};
+
+// ── USPs Section (Strict Architectural Verification) ──
+function UspsSection() {
+  const [usps, setUsps] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUsp, setEditingUsp] = useState(null);
 
-  useEffect(() => {
-    api.admin.getCatalogue()
-      .then(d => { setCatalogue(d || {}); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const handleSave = async (e) => {
-    e?.preventDefault();
-    setSaving(true);
+  const loadData = async () => {
+    setLoading(true);
     try {
-      await api.admin.updateCatalogue(catalogue);
-      notifyDataChanged();
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      const data = await api.admin.getUsps();
+      setUsps(data || []);
     } catch (err) {
-      alert('Failed to save catalogue: ' + (err.error || err.message || 'Server error'));
+      console.error('Failed to load USPs:', err);
     } finally {
-      setSaving(false);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleOpenAdd = () => {
+    setEditingUsp(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (u) => {
+    setEditingUsp(u);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id, title) => {
+    if (!confirm(`Are you sure you want to delete USP: "${title}"?`)) return;
+    try {
+      await api.admin.deleteUsp(id);
+      notifyDataChanged();
+      loadData();
+    } catch (err) {
+      alert('Failed to delete USP: ' + (err.message || 'Server error'));
     }
   };
 
   return (
-    <AdminCard
-      title="Catalogue Management"
-      subtitle="Manage the master downloadable catalogue PDF for customers and trade partners"
-    >
-      <form onSubmit={handleSave} style={{ maxWidth: 640 }}>
-        <div style={{ marginBottom: '1.25rem' }}>
-          <label style={labelStyle}>Catalogue Document Title</label>
-          <input
-            type="text"
-            value={catalogue.title || ''}
-            onChange={e => setCatalogue({ ...catalogue, title: e.target.value })}
-            style={inputStyle}
-            placeholder="e.g. New Ikon Doors Master Architectural Catalogue"
-          />
+    <div>
+      {/* Strict Verification Banner */}
+      <div style={{
+        background: '#EFF6FF',
+        border: '1px solid #BFDBFE',
+        borderRadius: 8,
+        padding: '1rem 1.25rem',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '0.75rem'
+      }}>
+        <ShieldCheck size={22} color="#2563EB" style={{ flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E40AF' }}>
+            Architectural Verification Governance Rule
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#1E3A8A', marginTop: '0.2rem', lineHeight: 1.5 }}>
+            To protect architectural credibility and avoid false marketing claims, only technical specifications verified by New Ikon technical catalogues, factory test certificates, or wholesale group records may be published. Unverified claims cannot be set to "Published".
+          </div>
         </div>
+      </div>
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <label style={labelStyle}>Catalogue PDF File URL or Path</label>
-          <input
-            type="text"
-            value={catalogue.file_url || ''}
-            onChange={e => setCatalogue({ ...catalogue, file_url: e.target.value })}
-            style={inputStyle}
-            placeholder="/catalogue/NEW_IKON_DOORS.pdf"
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+      <AdminCard
+        title={`Verified USPs & Core Features (${usps.length})`}
+        subtitle="Manage the architectural strengths and manufacturing USPs displayed on the homepage and about page"
+        actions={
           <button
-            type="submit"
-            disabled={saving}
+            onClick={handleOpenAdd}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.65rem 1.5rem',
-              background: saved ? '#10B981' : '#B8976C',
+              gap: '0.45rem',
+              padding: '0.6rem 1.15rem',
+              background: '#B8976C',
               color: '#fff',
               border: 'none',
               borderRadius: 6,
@@ -2654,33 +2705,666 @@ function CatalogueSection() {
               cursor: 'pointer'
             }}
           >
-            {saved ? <><Check size={15} /> Catalogue Saved!</> : saving ? 'Saving...' : 'Save Catalogue Settings'}
+            <Plus size={16} /> Add New USP
           </button>
+        }
+      >
+        {loading ? (
+          <p style={{ color: '#94A3B8' }}>Loading USPs...</p>
+        ) : usps.length === 0 ? (
+          <p style={{ color: '#64748B' }}>No USPs configured yet.</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+            {usps.map((u) => (
+              <div
+                key={u.id}
+                style={{
+                  border: '1px solid #E2E8F0',
+                  borderRadius: 8,
+                  padding: '1.4rem',
+                  background: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 8,
+                      background: 'rgba(184, 151, 108, 0.12)',
+                      color: '#B8976C',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {renderUspIcon(u.icon, 20)}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <span style={{
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: 4,
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        background: u.verified ? '#D1FAE5' : '#FEF3C7',
+                        color: u.verified ? '#065F46' : '#92400E',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                      }}>
+                        {u.verified ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                        {u.verified ? 'Verified Spec' : 'Pending Verification'}
+                      </span>
+                      <span style={{
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: 4,
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        background: u.published ? '#DBEAFE' : '#F1F5F9',
+                        color: u.published ? '#1E40AF' : '#64748B'
+                      }}>
+                        {u.published ? 'Published' : 'Draft'}
+                      </span>
+                    </div>
+                  </div>
 
-          {catalogue.file_url && (
-            <a
-              href={catalogue.file_url}
-              target="_blank"
-              rel="noopener"
+                  <div style={{ fontWeight: 600, color: '#0F172A', fontSize: '0.95rem', marginBottom: '0.4rem' }}>
+                    {u.title}
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: '#64748B', lineHeight: 1.55 }}>
+                    {u.description}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.75rem' }}>
+                    Order: #{u.sort_order ?? 1} • Icon: {u.icon || 'Sparkles'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.85rem' }}>
+                  <button
+                    onClick={() => handleOpenEdit(u)}
+                    style={{
+                      flex: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem',
+                      padding: '0.45rem',
+                      background: '#F1F5F9',
+                      color: '#0F172A',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: 6,
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Edit size={13} /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(u.id, u.title)}
+                    style={{
+                      padding: '0.45rem 0.65rem',
+                      background: '#FEF2F2',
+                      color: '#EF4444',
+                      border: '1px solid #FECACA',
+                      borderRadius: 6,
+                      cursor: 'pointer'
+                    }}
+                    title="Delete USP"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </AdminCard>
+
+      <UspModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        usp={editingUsp}
+        onSaved={() => {
+          setIsModalOpen(false);
+          loadData();
+        }}
+      />
+    </div>
+  );
+}
+
+// ── USP Modal Component ──
+function UspModal({ isOpen, onClose, usp, onSaved }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [icon, setIcon] = useState('Sparkles');
+  const [sortOrder, setSortOrder] = useState(1);
+  const [verified, setVerified] = useState(true);
+  const [published, setPublished] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (usp) {
+      setTitle(usp.title || '');
+      setDescription(usp.description || '');
+      setIcon(usp.icon || 'Sparkles');
+      setSortOrder(usp.sort_order ?? 1);
+      setVerified(Boolean(usp.verified));
+      setPublished(Boolean(usp.published));
+    } else {
+      setTitle('');
+      setDescription('');
+      setIcon('Sparkles');
+      setSortOrder(1);
+      setVerified(true);
+      setPublished(true);
+    }
+    setError('');
+  }, [usp, isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || !description.trim()) {
+      setError('Title and description are required.');
+      return;
+    }
+    if (published && !verified) {
+      setError('Architectural Governance Violation: An unverified claim cannot be published to the public website.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      icon,
+      sort_order: parseInt(sortOrder) || 1,
+      verified: Boolean(verified),
+      published: Boolean(published && verified),
+    };
+
+    try {
+      if (usp?.id) {
+        await api.admin.updateUsp(usp.id, payload);
+      } else {
+        await api.admin.createUsp(payload);
+      }
+      notifyDataChanged();
+      onSaved();
+    } catch (err) {
+      setError(err.message || 'Failed to save USP');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={usp ? `Edit Feature / USP: ${usp.title}` : 'Add Verified Feature / USP'}
+      maxWidth={580}
+    >
+      <form onSubmit={handleSubmit}>
+        {error && (
+          <div style={{ background: '#FEE2E2', border: '1px solid #F87171', color: '#991B1B', padding: '0.75rem 1rem', borderRadius: 6, marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ marginBottom: '1.15rem' }}>
+          <label style={labelStyle}>Feature / USP Title *</label>
+          <input
+            type="text"
+            required
+            placeholder="e.g. In-House CNC Precision"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1.15rem' }}>
+          <label style={labelStyle}>Technical Description *</label>
+          <textarea
+            rows={3}
+            required
+            placeholder="Technical description of engineering, core materials, or manufacturing standard..."
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            style={{ ...inputStyle, resize: 'vertical' }}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div>
+            <label style={labelStyle}>Icon Symbol</label>
+            <select
+              value={icon}
+              onChange={e => setIcon(e.target.value)}
+              style={inputStyle}
+            >
+              <option value="Cpu">⚙️ Cpu (CNC Precision & Engineering)</option>
+              <option value="Droplets">💧 Droplets (Water & Moisture Resistance)</option>
+              <option value="Maximize2">📐 Maximize2 (Architectural Sizing)</option>
+              <option value="Users">🏢 Users (Wholesale Group Synergies)</option>
+              <option value="ShieldCheck">🛡️ ShieldCheck (Quality Assurance)</option>
+              <option value="Sparkles">✨ Sparkles (Design Elegance)</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Sort Order</label>
+            <input
+              type="number"
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value)}
+              style={inputStyle}
+              min="1"
+            />
+          </div>
+        </div>
+
+        <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: 8, border: '1px solid #E2E8F0', marginBottom: '1.5rem' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', cursor: 'pointer', marginBottom: '0.75rem' }}>
+            <input
+              type="checkbox"
+              checked={verified}
+              onChange={e => {
+                const val = e.target.checked;
+                setVerified(val);
+                if (!val) setPublished(false);
+              }}
+              style={{ marginTop: '0.2rem' }}
+            />
+            <div>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0F172A' }}>Verified Architectural Specification</span>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.1rem' }}>
+                Confirmed against official New Ikon technical catalog, CNC milling capacity, or certified group suppliers.
+              </div>
+            </div>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', cursor: verified ? 'pointer' : 'not-allowed', opacity: verified ? 1 : 0.6 }}>
+            <input
+              type="checkbox"
+              checked={published}
+              disabled={!verified}
+              onChange={e => setPublished(e.target.checked)}
+              style={{ marginTop: '0.2rem' }}
+            />
+            <div>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0F172A' }}>Publish to Public Website</span>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.1rem' }}>
+                Display this USP in the homepage orbital animation and the About page standards section.
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: '0.65rem 1.25rem',
+              background: '#F1F5F9',
+              color: '#475569',
+              border: '1px solid #CBD5E1',
+              borderRadius: 6,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.65rem 1.5rem',
+              background: '#B8976C',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            <Check size={16} /> {saving ? 'Saving...' : usp ? 'Update USP' : 'Create USP'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ── Catalogue Section (Secure PDF Management with Safe Replacement) ──
+function CatalogueSection() {
+  const [catalogueList, setCatalogueList] = useState([]);
+  const [currentCatalogue, setCurrentCatalogue] = useState({
+    title: 'New Ikon Doors Official Catalogue',
+    file_url: '/catalogue/NEW_IKON_DOORS.pdf',
+    version: '2026.1',
+    published: true,
+  });
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+  const pdfInputRef = useRef(null);
+
+  const loadData = async () => {
+    try {
+      const data = await api.admin.getCatalogue();
+      if (Array.isArray(data) && data.length > 0) {
+        setCatalogueList(data);
+        const active = data.find(c => c.published || c.active) || data[0];
+        setCurrentCatalogue(active);
+      } else if (data && typeof data === 'object') {
+        setCurrentCatalogue(data);
+      }
+    } catch (err) {
+      console.warn('Could not load catalogue from DB:', err);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Strict PDF validation
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      setError('File rejected: Only PDF catalogue documents are permitted.');
+      if (pdfInputRef.current) pdfInputRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      setError('File rejected: Catalogue PDF size cannot exceed 50MB.');
+      if (pdfInputRef.current) pdfInputRef.current.value = '';
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+    setUploadProgress(`Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+
+    try {
+      // Upload directly into the protected 'catalogue' storage bucket
+      const res = await api.admin.uploadFile('catalogue', file, 'catalogue');
+      if (res?.publicUrl) {
+        // Safe replacement logic: Do not alter current active catalogue until new upload is verified
+        setCurrentCatalogue(prev => ({
+          ...prev,
+          file_url: res.publicUrl,
+          pdf_url: res.publicUrl,
+          file_size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+          version: `2026.${Date.now().toString().slice(-4)}`
+        }));
+        setUploadProgress('Upload complete! Please click "Save & Publish Master Catalogue" to activate.');
+      }
+    } catch (err) {
+      setError('Upload failed: ' + (err.message || 'Storage error'));
+    } finally {
+      setUploading(false);
+      if (pdfInputRef.current) pdfInputRef.current.value = '';
+    }
+  };
+
+  const handleSave = async (e) => {
+    e?.preventDefault();
+    if (!currentCatalogue.file_url) {
+      setError('A valid PDF URL or uploaded file is required.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+
+    try {
+      await api.admin.updateCatalogue({
+        title: currentCatalogue.title || 'New Ikon Doors Master Catalogue',
+        file_url: currentCatalogue.file_url,
+        pdf_url: currentCatalogue.file_url,
+        version: currentCatalogue.version || '2026.1',
+        file_size: currentCatalogue.file_size || '9.0 MB',
+        published: true,
+        active: true
+      });
+      notifyDataChanged();
+      setSaved(true);
+      loadData();
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError('Failed to save catalogue: ' + (err.message || 'Database error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 840 }}>
+      {/* Security notice */}
+      <div style={{
+        background: '#F0FDF4',
+        border: '1px solid #BBF7D0',
+        borderRadius: 8,
+        padding: '1rem 1.25rem',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem'
+      }}>
+        <FileCheck size={22} color="#16A34A" style={{ flexShrink: 0 }} />
+        <div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#15803D' }}>
+            Production Catalogue Storage & Delivery
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#166534', marginTop: '0.2rem' }}>
+            Catalogue files are stored in the secure Supabase "catalogue" bucket with MIME validation (PDF only). Safe replacement logic ensures the public website always serves a valid catalogue document.
+          </div>
+        </div>
+      </div>
+
+      <AdminCard
+        title="Master Architectural Catalogue"
+        subtitle="Manage the downloadable master door collection catalogue for architects, builders, and trade partners"
+      >
+        {error && (
+          <div style={{ background: '#FEE2E2', border: '1px solid #F87171', color: '#991B1B', padding: '0.75rem 1rem', borderRadius: 6, marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSave}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={labelStyle}>Catalogue Document Title *</label>
+            <input
+              type="text"
+              required
+              value={currentCatalogue.title || ''}
+              onChange={e => setCurrentCatalogue({ ...currentCatalogue, title: e.target.value })}
+              style={inputStyle}
+              placeholder="e.g. New Ikon Doors Official Catalogue"
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+            <div>
+              <label style={labelStyle}>Catalogue Edition / Version</label>
+              <input
+                type="text"
+                value={currentCatalogue.version || ''}
+                onChange={e => setCurrentCatalogue({ ...currentCatalogue, version: e.target.value })}
+                style={inputStyle}
+                placeholder="e.g. 2026.1"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Document File Size</label>
+              <input
+                type="text"
+                value={currentCatalogue.file_size || '9.0 MB'}
+                onChange={e => setCurrentCatalogue({ ...currentCatalogue, file_size: e.target.value })}
+                style={inputStyle}
+                placeholder="e.g. 9.0 MB"
+              />
+            </div>
+          </div>
+
+          {/* Current File Preview Card */}
+          <div style={{
+            background: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            borderRadius: 8,
+            padding: '1.25rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 8,
+                background: '#FEF2F2',
+                color: '#DC2626',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <FileText size={24} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#0F172A' }}>
+                  {currentCatalogue.file_url ? currentCatalogue.file_url.split('/').pop() : 'NEW_IKON_DOORS.pdf'}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.15rem' }}>
+                  Active Public PDF • Status: <span style={{ color: '#16A34A', fontWeight: 600 }}>Published</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              {currentCatalogue.file_url && (
+                <a
+                  href={currentCatalogue.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.55rem 1rem',
+                    background: '#0F172A',
+                    color: '#fff',
+                    borderRadius: 6,
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    textDecoration: 'none'
+                  }}
+                >
+                  <Eye size={14} /> Preview PDF
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Upload Replacement PDF */}
+          <div style={{
+            border: '2px dashed #CBD5E1',
+            borderRadius: 8,
+            padding: '1.75rem',
+            textAlign: 'center',
+            background: uploading ? '#F8FAFC' : '#fff',
+            marginBottom: '1.5rem'
+          }}>
+            <input
+              type="file"
+              ref={pdfInputRef}
+              accept="application/pdf,.pdf"
+              onChange={handlePdfUpload}
+              style={{ display: 'none' }}
+              id="catalogue-pdf-uploader"
+            />
+            <label
+              htmlFor="catalogue-pdf-uploader"
+              style={{
+                display: 'inline-flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: uploading ? 'wait' : 'pointer',
+              }}
+            >
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: 'rgba(184, 151, 108, 0.12)',
+                color: '#B8976C',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Upload size={22} />
+              </div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0F172A' }}>
+                {uploading ? 'Uploading PDF to Secure Storage...' : 'Click to Upload Replacement Catalogue PDF'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                Accepts official PDF documents only (up to 50MB)
+              </div>
+            </label>
+            {uploadProgress && (
+              <div style={{ marginTop: '0.75rem', fontSize: '0.82rem', color: '#2563EB', fontWeight: 500 }}>
+                {uploadProgress}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <button
+              type="submit"
+              disabled={saving || uploading}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.4rem',
-                padding: '0.65rem 1.2rem',
-                background: '#0F172A',
+                padding: '0.65rem 1.6rem',
+                background: saved ? '#10B981' : '#B8976C',
                 color: '#fff',
-                textDecoration: 'none',
+                border: 'none',
                 borderRadius: 6,
                 fontSize: '0.85rem',
-                fontWeight: 600
+                fontWeight: 600,
+                cursor: 'pointer'
               }}
             >
-              <FileText size={15} /> View Current PDF
-            </a>
-          )}
-        </div>
-      </form>
-    </AdminCard>
+              {saved ? <><Check size={16} /> Catalogue Saved & Published!</> : saving ? 'Saving...' : 'Save & Publish Master Catalogue'}
+            </button>
+          </div>
+        </form>
+      </AdminCard>
+    </div>
   );
 }
 

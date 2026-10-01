@@ -225,3 +225,15 @@ export async function sbDeleteEnquiry(id) {
   const { error } = await sb.from('enquiries').delete().eq('id', id);
   return !error;
 }
+
+// ---- USPs ----
+export async function sbGetUsps(publishedOnly = true) {
+  const sb = getSupabase();
+  if (!sb) return null;
+  let q = sb.from('usps').select('*').order('sort_order', { ascending: true });
+  if (publishedOnly) q = q.eq('published', true).eq('verified', true);
+  const { data, error } = await q;
+  if (error) return null;
+  return data || [];
+}
+
