@@ -115,8 +115,9 @@ export const authService = {
     const cleanInput = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Map username 'admin' to standard administrative email
-    const loginEmail = cleanInput === 'admin' ? 'admin@newikondoors.com' : cleanInput;
+    // Map username 'abbasabbas' or 'admin' to administrative account
+    const isAbbas = cleanInput === 'abbasabbas' || cleanInput === 'abbas';
+    const loginEmail = (isAbbas || cleanInput === 'admin') ? 'admin@newikondoors.com' : cleanInput;
 
     // Check Rate Limit
     const rateLimit = checkLoginRateLimit();
@@ -137,9 +138,10 @@ export const authService = {
           clearLoginRateLimit();
           const userObj = {
             id: data.user.id,
-            email: data.user.email,
+            email: isAbbas ? 'abbasabbas' : data.user.email,
+            username: isAbbas ? 'abbasabbas' : 'admin',
             role: 'admin',
-            name: data.user.user_metadata?.name || 'Administrator',
+            name: isAbbas ? 'Abbas' : (data.user.user_metadata?.name || 'Administrator'),
           };
           try {
             localStorage.setItem('nid_user', JSON.stringify(userObj));

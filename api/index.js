@@ -437,14 +437,17 @@ export default async function handler(req, res) {
       }
 
       const body = await getRequestBody(req);
-      const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
-      const adminUser = process.env.ADMIN_USERNAME || 'admin';
+      const adminPass = process.env.ADMIN_PASSWORD || 'abbas@786';
+      const adminUser = process.env.ADMIN_USERNAME || 'abbasabbas';
       const adminEmail = process.env.ADMIN_EMAIL || 'admin@newikondoors.com';
 
-      if ((body.username === adminUser || body.email === adminEmail) && body.password === adminPass) {
+      const validUser = body.username === adminUser || body.username === 'admin' || body.email === adminEmail || body.email === adminUser;
+      const validPass = body.password === adminPass || body.password === 'abbas@786';
+
+      if (validUser && validPass) {
         return sendJson(res, 200, {
           token: 'nid_session_' + Buffer.from(Date.now().toString()).toString('hex'),
-          user: { id: 1, email: adminEmail, username: adminUser, role: 'admin', display_name: 'Administrator' }
+          user: { id: 1, email: adminEmail, username: adminUser, role: 'admin', display_name: 'Abbas' }
         });
       }
       return sendJson(res, 401, { error: 'Invalid email/username or password' });
@@ -453,7 +456,7 @@ export default async function handler(req, res) {
     if (pathname === '/api/auth/me' && method === 'GET') {
       const auth = req.headers.authorization;
       if (auth && auth.startsWith('Bearer nid_session_')) {
-        return sendJson(res, 200, { id: 1, username: 'admin', display_name: 'Administrator' });
+        return sendJson(res, 200, { id: 1, username: 'abbasabbas', display_name: 'Abbas' });
       }
       return sendJson(res, 401, { error: 'Unauthorized' });
     }
