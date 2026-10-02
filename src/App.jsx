@@ -6,8 +6,9 @@ import { setSEO } from './services/seo';
 import { SiteProvider, useSite } from './context/SiteContext';
 import { MessageSquare } from 'lucide-react';
 
-// ── Lazy-loaded pages (code-splitting) ──
-const HomePage = lazy(() => import('./pages/HomePage'));
+import HomePage from './pages/HomePage';
+
+// ── Lazy-loaded secondary pages (code-splitting) ──
 const CollectionsPage = lazy(() => import('./pages/CollectionsPage'));
 const CollectionDetailPage = lazy(() => import('./pages/CollectionDetailPage'));
 const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
