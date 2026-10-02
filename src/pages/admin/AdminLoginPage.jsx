@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
       alignItems: 'center',
       justifyContent: 'center',
       background: 'var(--bg-dark)',
-      padding: '2rem',
+      padding: 'clamp(1rem, 3vw, 2rem)',
     }}>
       <div style={{
         width: '100%',
@@ -89,7 +89,7 @@ export default function AdminLoginPage() {
         background: 'var(--bg-dark-surface)',
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border-dark)',
-        padding: '2.5rem',
+        padding: 'clamp(1.25rem, 4vw, 2.5rem)',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
       }}>
         {/* Header */}

@@ -239,80 +239,81 @@ export default function HomePage() {
 
           {/* Large alternating collection blocks */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(2rem, 5vw, 4rem)' }}>
-            {editorialCollections.map((col, i) => (
-              <RevealDiv key={col.slug || i} delay={i * 0.1} style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: 'clamp(1.5rem, 3vw, 3rem)',
-                alignItems: 'center',
-              }}>
-                {/* Image */}
-                <a
-                  href={`/collections/${col.slug}`}
-                  onClick={(e) => { e.preventDefault(); navigate(`/collections/${col.slug}`); }}
-                  className="card-image-zoom"
-                  style={{
-                    borderRadius: 'var(--radius-md)',
-                    overflow: 'hidden',
-                    height: 'clamp(400px, 46vw, 520px)',
-                    background: 'radial-gradient(circle at center, #24221f 0%, #0f0e0d 100%)',
-                    border: '1px solid rgba(184, 151, 108, 0.25)',
-                    boxShadow: '0 16px 36px rgba(0,0,0,0.14)',
-                    order: i % 2 === 1 ? 2 : 1,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '1.25rem',
-                    textDecoration: 'none',
-                  }}
+            {editorialCollections.map((col, i) => {
+              const isReversed = i % 2 === 1;
+              return (
+                <RevealDiv
+                  key={col.slug || i}
+                  delay={i * 0.1}
+                  className={`editorial-grid ${isReversed ? 'is-reversed' : ''}`}
                 >
-                  <img
-                    src={col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`}
-                    alt={`New Ikon ${col.name} Collection`}
-                    loading="lazy"
-                    style={{
-                      maxHeight: '100%',
-                      maxWidth: '100%',
-                      width: 'auto',
-                      height: 'auto',
-                      objectFit: 'contain',
-                      display: 'block',
-                      filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.75)) drop-shadow(0 0 15px rgba(184,134,11,0.18))',
-                      transition: 'transform 0.4s ease',
-                    }}
-                  />
-                </a>
-
-                {/* Text */}
-                <div style={{ order: i % 2 === 1 ? 1 : 2, padding: 'clamp(0.5rem, 2vw, 1.5rem) 0' }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--color-gold-dark)', marginBottom: '0.75rem' }}>
-                    {col.category || 'Door Collection'}
-                  </div>
-                  <h3 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'clamp(1.5rem, 2.8vw, 2.2rem)',
-                    fontWeight: 500,
-                    lineHeight: 1.2,
-                    marginBottom: '1rem',
-                    letterSpacing: '0.01em',
-                  }}>
-                    {col.name}
-                  </h3>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '1.5rem', maxWidth: 450 }}>
-                    {col.description || col.tagline || ''}
-                  </p>
+                  {/* Image */}
                   <a
                     href={`/collections/${col.slug}`}
-                    className="btn btn-dark"
                     onClick={(e) => { e.preventDefault(); navigate(`/collections/${col.slug}`); }}
-                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                    className="card-image-zoom editorial-img-col"
+                    style={{
+                      borderRadius: 'var(--radius-md)',
+                      overflow: 'hidden',
+                      height: 'clamp(400px, 46vw, 520px)',
+                      background: 'radial-gradient(circle at center, #24221f 0%, #0f0e0d 100%)',
+                      border: '1px solid rgba(184, 151, 108, 0.25)',
+                      boxShadow: '0 16px 36px rgba(0,0,0,0.14)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '1.25rem',
+                      textDecoration: 'none',
+                    }}
                   >
-                    Explore Collection <ArrowRight size={14} />
+                    <img
+                      src={col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`}
+                      alt={`New Ikon ${col.name} Collection`}
+                      loading="lazy"
+                      style={{
+                        maxHeight: '100%',
+                        maxWidth: '100%',
+                        width: 'auto',
+                        height: 'auto',
+                        objectFit: 'contain',
+                        display: 'block',
+                        filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.75)) drop-shadow(0 0 15px rgba(184,134,11,0.18))',
+                        transition: 'transform 0.4s ease',
+                      }}
+                    />
                   </a>
-                </div>
-              </RevealDiv>
-            ))}
+
+                  {/* Text */}
+                  <div className="editorial-txt-col" style={{ padding: 'clamp(0.5rem, 2vw, 1.5rem) 0' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--color-gold-dark)', marginBottom: '0.75rem' }}>
+                      {col.category || 'Door Collection'}
+                    </div>
+                    <h3 style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'clamp(1.5rem, 2.8vw, 2.2rem)',
+                      fontWeight: 500,
+                      lineHeight: 1.2,
+                      marginBottom: '1rem',
+                      letterSpacing: '0.01em',
+                    }}>
+                      {col.name}
+                    </h3>
+                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '1.5rem', maxWidth: 450 }}>
+                      {col.description || col.tagline || ''}
+                    </p>
+                    <a
+                      href={`/collections/${col.slug}`}
+                      className="btn btn-dark"
+                      onClick={(e) => { e.preventDefault(); navigate(`/collections/${col.slug}`); }}
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      Explore Collection <ArrowRight size={14} />
+                    </a>
+                  </div>
+                </RevealDiv>
+              );
+            })}
           </div>
 
           {/* View All */}

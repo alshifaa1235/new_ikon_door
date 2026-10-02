@@ -76,20 +76,7 @@ export default function AdminLayout({ section }) {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC' }}>
       {/* Sidebar */}
-      <aside style={{
-        width: 260,
-        background: '#111827',
-        color: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        zIndex: 100,
-        transform: window.innerWidth <= 768 ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-        transition: 'transform 0.3s ease',
-      }}>
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
         {/* Logo */}
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -98,7 +85,7 @@ export default function AdminLayout({ section }) {
               Administration CMS
             </div>
           </div>
-          <button className="hide-desktop" onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+          <button className="hide-desktop" onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '0.4rem', display: 'flex', alignItems: 'center' }} aria-label="Close sidebar">
             <X size={20} />
           </button>
         </div>
@@ -150,29 +137,19 @@ export default function AdminLayout({ section }) {
       </aside>
 
       {/* Main Content */}
-      <div style={{ flex: 1, marginLeft: window.innerWidth > 768 ? 260 : 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="admin-main-wrap">
         {/* Top Bar */}
-        <header style={{
-          background: '#fff',
-          borderBottom: '1px solid #E2E8F0',
-          padding: '0.85rem 1.75rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-        }}>
+        <header className="admin-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <button className="hide-desktop" onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button className="hide-desktop" onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.4rem', display: 'flex', alignItems: 'center' }} aria-label="Open sidebar">
               <Menu size={22} />
             </button>
             <h1 style={{ fontSize: '1.15rem', fontWeight: 600, textTransform: 'capitalize', color: '#0F172A', margin: 0 }}>
               {section || 'Dashboard'}
             </h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontSize: '0.82rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span className="hide-mobile" style={{ fontSize: '0.82rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               Logged in as <strong style={{ color: '#0F172A' }}>{user?.email || user?.username || 'Admin'}</strong>
               <span style={{ background: 'rgba(184,151,108,0.15)', color: '#B8976C', padding: '0.2rem 0.5rem', borderRadius: 4, fontSize: '0.72rem', fontWeight: 600 }}>Administrator</span>
             </span>
@@ -198,7 +175,7 @@ export default function AdminLayout({ section }) {
         </header>
 
         {/* Page Content */}
-        <main style={{ flex: 1, padding: '1.75rem' }}>
+        <main className="admin-main-content">
           {section === 'dashboard' || !section ? <DashboardSection onNavigate={navigate} /> : null}
           {section === 'products' ? <ProductsSection /> : null}
           {section === 'collections' ? <CollectionsSection /> : null}
@@ -213,7 +190,7 @@ export default function AdminLayout({ section }) {
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99 }} className="hide-desktop" />
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }} className="hide-desktop" />
       )}
     </div>
   );
@@ -224,7 +201,7 @@ function AdminCard({ children, title, subtitle, actions, style = {} }) {
   return (
     <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', ...style }}>
       {title && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.1rem 1.4rem', borderBottom: '1px solid #E2E8F0', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div className="admin-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.1rem 1.4rem', borderBottom: '1px solid #E2E8F0', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <h3 style={{ fontSize: '0.98rem', fontWeight: 600, color: '#0F172A', margin: 0 }}>{title}</h3>
             {subtitle && <p style={{ fontSize: '0.78rem', color: '#64748B', margin: '0.2rem 0 0' }}>{subtitle}</p>}
@@ -232,7 +209,7 @@ function AdminCard({ children, title, subtitle, actions, style = {} }) {
           {actions}
         </div>
       )}
-      <div style={{ padding: '1.4rem' }}>{children}</div>
+      <div style={{ padding: 'clamp(0.85rem, 2vw, 1.4rem)' }}>{children}</div>
     </div>
   );
 }
@@ -257,8 +234,8 @@ function Modal({ isOpen, onClose, title, children, maxWidth = 640 }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
-        padding: '1rem',
+        zIndex: 2000,
+        padding: 'clamp(0.5rem, 2vw, 1rem)',
       }}
       onClick={onClose}
     >
@@ -269,7 +246,7 @@ function Modal({ isOpen, onClose, title, children, maxWidth = 640 }) {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           width: '100%',
           maxWidth,
-          maxHeight: '90vh',
+          maxHeight: '94vh',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -277,22 +254,23 @@ function Modal({ isOpen, onClose, title, children, maxWidth = 640 }) {
         onClick={e => e.stopPropagation()}
       >
         <div style={{
-          padding: '1.25rem 1.5rem',
+          padding: '1rem 1.25rem',
           borderBottom: '1px solid #E2E8F0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           background: '#F8FAFC'
         }}>
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0F172A', margin: 0 }}>{title}</h2>
+          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#0F172A', margin: 0 }}>{title}</h2>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: '0.3rem', borderRadius: 6, display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: '0.4rem', borderRadius: 6, display: 'flex', alignItems: 'center' }}
+            aria-label="Close modal"
           >
             <X size={20} />
           </button>
         </div>
-        <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: 'clamp(1rem, 3vw, 1.5rem)', overflowY: 'auto', flex: 1 }}>
           {children}
         </div>
       </div>
@@ -1245,7 +1223,7 @@ function CollectionsSection() {
         {loading ? (
           <p style={{ color: '#94A3B8' }}>Loading collections...</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '1.25rem' }}>
             {collections.map(c => (
               <div
                 key={c.id}
@@ -1814,7 +1792,7 @@ function BranchesSection() {
         }
       >
         {loading ? <p style={{ color: '#94A3B8' }}>Loading branch directory...</p> : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '1.25rem' }}>
             {branches.map(b => (
               <div key={b.id} style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: '1.4rem', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
@@ -2201,7 +2179,7 @@ function TestimonialsSection() {
         }
       >
         {loading ? <p style={{ color: '#94A3B8' }}>Loading testimonials...</p> : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '1.25rem' }}>
             {testimonials.map(t => (
               <div key={t.id} style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: '1.4rem', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
@@ -2734,7 +2712,7 @@ function UspsSection() {
         ) : usps.length === 0 ? (
           <p style={{ color: '#64748B' }}>No USPs configured yet.</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '1.25rem' }}>
             {usps.map((u) => (
               <div
                 key={u.id}
