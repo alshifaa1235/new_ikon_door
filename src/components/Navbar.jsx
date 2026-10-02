@@ -130,13 +130,17 @@ export default function Navbar({ currentPage, quoteCount }) {
               transition: 'color 0.3s',
             }}
           >
-            <img
-              src={isTransparent ? '/new_ikon_logo_white.png' : '/new_ikon_logo.png'}
-              alt="New Ikon Doors"
-              width={166}
-              height={40}
-              style={{ height: scrolled ? 36 : 42, width: 'auto', transition: 'height 0.3s', objectFit: 'contain' }}
-            />
+            <picture>
+              <source srcSet={isTransparent ? '/new_ikon_logo_white.webp' : '/new_ikon_logo.webp'} type="image/webp" />
+              <img
+                src={isTransparent ? '/new_ikon_logo_white.png' : '/new_ikon_logo.png'}
+                alt="New Ikon Doors"
+                width={166}
+                height={40}
+                decoding="async"
+                style={{ height: scrolled ? 36 : 42, width: 'auto', transition: 'height 0.3s', objectFit: 'contain' }}
+              />
+            </picture>
           </a>
 
           {/* Desktop Navigation */}

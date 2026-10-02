@@ -14,16 +14,22 @@ export default function Logo({ variant = 'dark', height = 40, className = '' }) 
         userSelect: 'none'
       }}
     >
-      <img
-        src={isLight ? '/logo-white.png' : '/logo.png'}
-        alt="New Ikon Doors"
-        style={{
-          height: `${height}px`,
-          width: 'auto',
-          display: 'block',
-          objectFit: 'contain'
-        }}
-      />
+      <picture>
+        <source srcSet={isLight ? '/logo-white.webp' : '/logo.webp'} type="image/webp" />
+        <img
+          src={isLight ? '/logo-white.png' : '/logo.png'}
+          alt="New Ikon Doors"
+          width={Math.round(height * 2.8)}
+          height={height}
+          decoding="async"
+          style={{
+            height: `${height}px`,
+            width: 'auto',
+            display: 'block',
+            objectFit: 'contain'
+          }}
+        />
+      </picture>
     </div>
   );
 }

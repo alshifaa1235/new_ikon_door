@@ -25,7 +25,10 @@ export default function DoorCard({ product, onSelect, onQuote }) {
         <img
           src={product.image?.startsWith('/') ? product.image : `/doors/${product.image}`}
           alt={`New Ikon ${product.collection} Model ${product.code}`}
+          width={240}
+          height={360}
           loading="lazy"
+          decoding="async"
           style={{
             maxHeight: '100%',
             maxWidth: '100%',

@@ -27,7 +27,7 @@ function RevealDiv({ className = 'reveal', delay = 0, children, style = {} }) {
 export default function HomePage() {
   const { navigate } = useNav();
   const { collections: siteCollections, homepageContent, settings } = useSite();
-  const [heroLoaded, setHeroLoaded] = useState(false);
+  const [heroLoaded, setHeroLoaded] = useState(true);
 
   useEffect(() => {
     setSEO({
@@ -35,7 +35,6 @@ export default function HomePage() {
       description: 'New Ikon Doors: Precision architectural door manufacturing in Trichy, Tamil Nadu. Wholesalers & manufacturers of UV Membrane, Marble Membrane, Steel Patti, Teak, and WPVC Doors.',
       canonical: '/'
     });
-    setTimeout(() => setHeroLoaded(true), 100);
   }, []);
 
   const collections = siteCollections || [];
@@ -65,7 +64,7 @@ export default function HomePage() {
         overflow: 'hidden',
         background: '#0a0a0a',
       }}>
-        {/* Video Background */}
+        {/* Video / Poster Background */}
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -73,13 +72,13 @@ export default function HomePage() {
         }}>
           <video
             autoPlay muted loop playsInline
-            poster="/hero_door_poster.jpg"
+            preload="none"
+            poster="/hero_door_poster.webp"
             style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              opacity: heroLoaded ? 0.55 : 0,
-              transition: 'opacity 1.2s ease',
+              opacity: 0.55,
             }}
           >
             <source src="/hero_door_opening.webm" type="video/webm" />
@@ -100,11 +99,7 @@ export default function HomePage() {
           maxWidth: 800,
           paddingTop: 'calc(var(--topbar-height) + var(--nav-height))',
         }}>
-          <div style={{
-            opacity: heroLoaded ? 1 : 0,
-            transform: heroLoaded ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
-          }}>
+          <div>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -267,21 +262,33 @@ export default function HomePage() {
                       textDecoration: 'none',
                     }}
                   >
-                    <img
-                      src={col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`}
-                      alt={`New Ikon ${col.name} Collection`}
-                      loading="lazy"
-                      style={{
-                        maxHeight: '100%',
-                        maxWidth: '100%',
-                        width: 'auto',
-                        height: 'auto',
-                        objectFit: 'contain',
-                        display: 'block',
-                        filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.75)) drop-shadow(0 0 15px rgba(184,134,11,0.18))',
-                        transition: 'transform 0.4s ease',
-                      }}
-                    />
+                    {(() => {
+                      const baseImg = col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`;
+                      const webpImg = baseImg.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+                      return (
+                        <picture>
+                          <source srcSet={webpImg} type="image/webp" />
+                          <img
+                            src={baseImg}
+                            alt={`New Ikon ${col.name} Collection`}
+                            width={400}
+                            height={520}
+                            loading="lazy"
+                            decoding="async"
+                            style={{
+                              maxHeight: '100%',
+                              maxWidth: '100%',
+                              width: 'auto',
+                              height: 'auto',
+                              objectFit: 'contain',
+                              display: 'block',
+                              filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.75)) drop-shadow(0 0 15px rgba(184,134,11,0.18))',
+                              transition: 'transform 0.4s ease',
+                            }}
+                          />
+                        </picture>
+                      );
+                    })()}
                   </a>
 
                   {/* Text */}
