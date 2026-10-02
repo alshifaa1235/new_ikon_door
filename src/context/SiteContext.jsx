@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api } from '../services/api';
-import { supabase } from '../services/supabaseClient';
 import companyData from '../data/company.json';
 import productsData from '../data/products.json';
 
@@ -77,6 +75,7 @@ export function SiteProvider({ children }) {
 
   const refreshSiteData = useCallback(async () => {
     try {
+      const { api } = await import('../services/api');
       const [fetchedSettings, fetchedCollections, fetchedHomepage, fetchedCatalogue, fetchedUsps] = await Promise.allSettled([
         api.getSettings(),
         api.getCollections(),
@@ -152,18 +151,21 @@ export function SiteProvider({ children }) {
 
     // Supabase Real-time Cloud Synchronization across ALL devices
     let channel = null;
-    const setupRealtime = () => {
-      if (supabase) {
-        try {
+    let supabaseClient = null;
+    const setupRealtime = async () => {
+      try {
+        const { supabase } = await import('../services/supabaseClient');
+        if (supabase) {
+          supabaseClient = supabase;
           channel = supabase
             .channel('public:db-sync')
             .on('postgres_changes', { event: '*', schema: 'public' }, () => {
               refreshSiteData();
             })
             .subscribe();
-        } catch (e) {
-          console.warn('Realtime subscription issue:', e);
         }
+      } catch (e) {
+        console.warn('Realtime subscription issue:', e);
       }
     };
 
@@ -185,8 +187,8 @@ export function SiteProvider({ children }) {
       if (timerRefreshId) clearTimeout(timerRefreshId);
       if (idleRealtimeId && typeof window !== 'undefined' && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleRealtimeId);
       if (timerRealtimeId) clearTimeout(timerRealtimeId);
-      if (channel && supabase) {
-        supabase.removeChannel(channel);
+      if (channel && supabaseClient) {
+        supabaseClient.removeChannel(channel);
       }
     };
   }, [refreshSiteData]);
