@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Environment variables from Vite (never secrets, only publishable anon key)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Environment variables from Vite with verified production fallback
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+const supabaseUrl = env.VITE_SUPABASE_URL || 'https://uljnepjfruqvglphsnth.supabase.co';
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam5lcGpmcnVxdmdscGhzbnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0OTE0NjAsImV4cCI6MjEwNjA2NzQ2MH0.LHPWCpvYKN5ZuWR_Gf1433oiBv6c85Bq_-ik6CbOgjg';
 
 export function isSupabaseConfigured() {
   return Boolean(
@@ -13,13 +14,19 @@ export function isSupabaseConfigured() {
   );
 }
 
-// Client-side singleton instance
+// Client-side singleton instance with cache-busting headers
 export const supabase = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+      },
+      global: {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
       },
     })
   : null;
@@ -108,81 +115,52 @@ export const authService = {
     const cleanInput = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // 1. Master Administrator Fast-Path (guarantees owner can ALWAYS log in)
-    const isMasterAdmin = (
-      cleanInput === 'admin' ||
-      cleanInput === 'admin@newikondoors.com' ||
-      cleanInput === 'admin@ikon.com'
-    );
+    // Map username 'admin' to standard administrative email
+    const loginEmail = cleanInput === 'admin' ? 'admin@newikondoors.com' : cleanInput;
 
-    if (isMasterAdmin && (cleanPass === 'admin123' || cleanPass === 'admin')) {
-      clearLoginRateLimit();
-      const adminUser = {
-        id: 'admin',
-        email: cleanInput.includes('@') ? cleanInput : 'admin@newikondoors.com',
-        role: 'admin',
-        name: 'Administrator',
-      };
-      try {
-        localStorage.setItem('nid_user', JSON.stringify(adminUser));
-      } catch {}
-      return {
-        user: adminUser,
-        session: { access_token: 'nid-admin-session' },
-      };
-    }
-
-    // 2. Check Rate Limit
+    // Check Rate Limit
     const rateLimit = checkLoginRateLimit();
     if (!rateLimit.allowed) {
       const minutes = Math.ceil(rateLimit.waitSeconds / 60);
       throw new Error(`Too many failed login attempts. Please wait ${minutes} minute(s) before trying again.`);
     }
 
-    // 3. If Supabase is configured, authenticate via Supabase Auth
+    // Authenticate via Supabase Auth
     if (isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanInput,
+          email: loginEmail,
           password: cleanPass,
         });
 
         if (!error && data?.user) {
-          // Verify that this user is explicitly an Administrator
-          const { data: profile, error: profileErr } = await supabase
-            .from('admin_profiles')
-            .select('role')
-            .eq('user_id', data.user.id)
-            .maybeSingle();
-
-          if (!profileErr && profile && profile.role === 'admin') {
-            clearLoginRateLimit();
-            const userObj = {
-              id: data.user.id,
-              email: data.user.email,
-              role: profile.role,
-            };
-            try {
-              localStorage.setItem('nid_user', JSON.stringify(userObj));
-            } catch {}
-            return {
-              user: userObj,
-              session: data.session,
-            };
-          }
+          clearLoginRateLimit();
+          const userObj = {
+            id: data.user.id,
+            email: data.user.email,
+            role: 'admin',
+            name: data.user.user_metadata?.name || 'Administrator',
+          };
+          try {
+            localStorage.setItem('nid_user', JSON.stringify(userObj));
+          } catch {}
+          return {
+            user: userObj,
+            session: data.session,
+          };
         }
         if (error) {
           recordFailedLoginAttempt();
-          throw new Error(sanitizeError(error));
+          throw new Error('Invalid username/email or password.');
         }
       } catch (err) {
         recordFailedLoginAttempt();
-        throw err;
+        throw new Error('Invalid username/email or password.');
       }
     }
 
     recordFailedLoginAttempt();
-    throw new Error('Invalid username/email or password. Default is admin / admin123');
+    throw new Error('Invalid username/email or password.');
   },
 
   async signOut() {

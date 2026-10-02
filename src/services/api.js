@@ -1,20 +1,32 @@
 // ==============================================================================
 // NEW IKON DOORS — CLIENT API & DATABASE SERVICE
 // ==============================================================================
-// Dual-mode architecture:
-// 1. Direct Supabase Client + PostgreSQL RLS (when configured)
-// 2. Resilient unified client-side persistence (localStorage overlay) that guarantees
-//    ANY addition, update, or deletion made in the CRM IMMEDIATELY reflects on the main website.
-import companyData from '../data/company.json';
-import productsData from '../data/products.json';
-import testimonialsData from '../data/testimonials.json';
-import { supabase, isSupabaseConfigured, authService, storageService, sanitizeError } from './supabaseClient';
+// 100% Unified Cloud PostgreSQL Architecture (Supabase):
+// Single source of truth across all devices, browsers, and platforms.
+// Zero local-storage or device-specific persistence for CMS content.
+// ==============================================================================
 
-const BASE = '';
+import { supabase, isSupabaseConfigured, authService, storageService, sanitizeError } from './supabaseClient.js';
+
+// Clear any legacy client-side localStorage overrides from earlier versions
+// to ensure every device (PC, phone, tablet) renders the live production DB.
+if (typeof window !== 'undefined') {
+  try {
+    const legacyKeys = [
+      'nid_crm_products_edits', 'nid_crm_products_new', 'nid_crm_products_deleted',
+      'nid_crm_collections_edits', 'nid_crm_collections_new', 'nid_crm_collections_deleted',
+      'nid_crm_branches_edits', 'nid_crm_branches_new', 'nid_crm_branches_deleted',
+      'nid_crm_testimonials_edits', 'nid_crm_testimonials_new', 'nid_crm_testimonials_deleted',
+      'nid_crm_usps_edits', 'nid_crm_usps_new', 'nid_crm_usps_deleted',
+      'nid_crm_catalogue', 'nid_crm_settings', 'nid_enquiries'
+    ];
+    legacyKeys.forEach(k => localStorage.removeItem(k));
+  } catch {}
+}
 
 // Cache-busting version — increment when images are replaced to force fresh downloads
-const IMAGE_VERSION = 'v2';
-function bustCache(url) {
+const IMAGE_VERSION = 'v3';
+export function bustCache(url) {
   if (!url || typeof url !== 'string' || url.startsWith('http') || url.startsWith('data:')) return url;
   return `${url}${url.includes('?') ? '&' : '?'}v=${IMAGE_VERSION}`;
 }
@@ -36,13 +48,18 @@ export function notifyDataChanged() {
 
 // Format product record consistently
 export function formatProduct(p, col = null) {
+  if (!p) return null;
   let specs = p.specs || {};
   let features = p.features || [];
+  let gallery = p.gallery_images || [];
   if (typeof specs === 'string') {
     try { specs = JSON.parse(specs); } catch { specs = {}; }
   }
   if (typeof features === 'string') {
     try { features = JSON.parse(features); } catch { features = []; }
+  }
+  if (typeof gallery === 'string') {
+    try { gallery = JSON.parse(gallery); } catch { gallery = []; }
   }
 
   const primaryImg = p.primary_image || p.image || '';
@@ -60,15 +77,18 @@ export function formatProduct(p, col = null) {
     collection_name: p.collection_name || (col ? col.name : ''),
     primary_image: cleanImg,
     image: cleanImg,
+    gallery_images: gallery,
     lifestyle_image: p.lifestyle_image ? bustCache(p.lifestyle_image.startsWith('/') || p.lifestyle_image.startsWith('http') || p.lifestyle_image.startsWith('data:') ? p.lifestyle_image : `/doors/${p.lifestyle_image}`) : '',
+    lifestyle_title: p.lifestyle_title || '',
     specs,
     features,
     published: p.published !== false && p.published !== 0,
-    featured: Boolean(p.featured)
+    featured: Boolean(p.featured),
+    sort_order: p.sort_order !== undefined ? Number(p.sort_order) : 99,
   };
 }
 
-// Default verified USPs
+// Fallback USPs in case table is temporarily unreachable
 export const fallbackUsps = [
   {
     id: 1,
@@ -108,232 +128,27 @@ export const fallbackUsps = [
   }
 ];
 
-// ──────────────────────────────────────────────────────────────────────────────
-// UNIFIED LOCAL STORAGE PERSISTENCE LAYER (Overlay Engine)
-// Guarantees all CRM updates reflect instantly on the public website even without Supabase
-// ──────────────────────────────────────────────────────────────────────────────
+// Fallback settings
+const fallbackSettings = {
+  id: 1,
+  company_name: 'New Ikon Doors',
+  tagline: 'Elevate Your Space • Upgrade Your Entrance',
+  phone: '+91 98424 45353',
+  phone_alt: '+91 98424 43353',
+  whatsapp: '9842445353',
+  email: 'abbas43353@gmail.com',
+  address: 'Plot No. 45 C/A1, Thanjavur Road, Near Mariyamman Kovil Bus Stop, Tharanallur, Trichy - 620008, Tamil Nadu, India',
+  specialization: 'Dealers in PVC, Teak, Rubber Wood, Mica, Plywoods',
+  machinery: 'High-Precision CNC Automated Routing & Vacuum Membrane Technology',
+};
 
-function getBaseProducts() {
-  return (productsData.collections || []).flatMap((c, cIdx) => 
-    (c.products || []).map((p, pIdx) => ({
-      ...p,
-      id: p.id || `p_${c.slug || cIdx}_${p.code || pIdx}`,
-      collection_id: p.collection_id || (cIdx + 1),
-      collection_slug: p.collection_slug || c.slug,
-      collection_name: p.collection_name || c.name,
-    }))
-  );
-}
-
-function getBaseCollections() {
-  return (productsData.collections || []).map((c, i) => ({
-    id: i + 1,
-    name: c.name,
-    slug: c.slug,
-    description: c.description || '',
-    category: c.category || '',
-    tagline: c.tagline || '',
-    cover_image: c.hero_image ? bustCache(c.hero_image.startsWith('/') || c.hero_image.startsWith('http') || c.hero_image.startsWith('data:') ? c.hero_image : `/doors/${c.hero_image}`) : '',
-    hero_image: c.hero_image ? bustCache(c.hero_image.startsWith('/') || c.hero_image.startsWith('http') || c.hero_image.startsWith('data:') ? c.hero_image : `/doors/${c.hero_image}`) : '',
-    material: c.material || '',
-    finish: c.finish || '',
-    thickness: c.thickness || '',
-    application: c.application || '',
-    published: c.published !== false,
-    featured: Boolean(c.featured),
-    sort_order: c.display_order !== undefined ? c.display_order : i,
-    product_count: c.products ? c.products.length : 0
-  }));
-}
-
-export function getMergedProducts(includeUnpublished = false) {
-  const base = getBaseProducts();
-  let edits = {};
-  let added = [];
-  let deleted = [];
-  if (typeof window !== 'undefined') {
-    try {
-      edits = JSON.parse(localStorage.getItem('nid_crm_products_edits') || '{}');
-      added = JSON.parse(localStorage.getItem('nid_crm_products_new') || '[]');
-      deleted = JSON.parse(localStorage.getItem('nid_crm_products_deleted') || '[]');
-    } catch {}
-  }
-
-  const deletedSet = new Set(deleted.map(String));
-
-  // Merge base with edits
-  const mergedBase = base
-    .filter(p => !deletedSet.has(String(p.id)) && !deletedSet.has(String(p.code)) && !deletedSet.has(normalizeCode(p.code)))
-    .map(p => {
-      const edit = edits[String(p.id)] || edits[String(p.code)] || edits[normalizeCode(p.code)];
-      return edit ? { ...p, ...edit } : p;
-    });
-
-  // Filter newly added that aren't deleted
-  const validAdded = added.filter(p => !deletedSet.has(String(p.id)) && !deletedSet.has(String(p.code)) && !deletedSet.has(normalizeCode(p.code)));
-
-  const all = [...validAdded, ...mergedBase].map(p => formatProduct(p));
-  return includeUnpublished ? all : all.filter(p => p.published);
-}
-
-export function getMergedCollections(includeUnpublished = false) {
-  const base = getBaseCollections();
-  let edits = {};
-  let added = [];
-  let deleted = [];
-  if (typeof window !== 'undefined') {
-    try {
-      edits = JSON.parse(localStorage.getItem('nid_crm_collections_edits') || '{}');
-      added = JSON.parse(localStorage.getItem('nid_crm_collections_new') || '[]');
-      deleted = JSON.parse(localStorage.getItem('nid_crm_collections_deleted') || '[]');
-    } catch {}
-  }
-
-  const deletedSet = new Set(deleted.map(String));
-  const prods = getMergedProducts(false);
-
-  const mergedBase = base
-    .filter(c => !deletedSet.has(String(c.id)) && !deletedSet.has(String(c.slug)))
-    .map(c => {
-      const edit = edits[String(c.id)] || edits[String(c.slug)];
-      const updated = edit ? { ...c, ...edit } : c;
-      const count = prods.filter(p => (String(p.collection_id) === String(updated.id) || p.collection_slug === updated.slug)).length;
-      return { ...updated, product_count: count };
-    });
-
-  const validAdded = added
-    .filter(c => !deletedSet.has(String(c.id)) && !deletedSet.has(String(c.slug)))
-    .map(c => {
-      const count = prods.filter(p => (String(p.collection_id) === String(c.id) || p.collection_slug === c.slug)).length;
-      return { ...c, product_count: count };
-    });
-
-  const all = [...mergedBase, ...validAdded];
-  return includeUnpublished ? all : all.filter(c => c.published !== false);
-}
-
-export function getMergedCollection(slug) {
-  const cols = getMergedCollections(false);
-  const col = cols.find(c => c.slug === slug || String(c.id) === String(slug));
-  if (!col) return null;
-  const allProds = getMergedProducts(false);
-  const prods = allProds.filter(p => (p.collection_slug === col.slug || String(p.collection_id) === String(col.id)));
-  return {
-    ...col,
-    products: prods
-  };
-}
-
-export function getMergedProduct(codeSlug) {
-  const cleanTarget = normalizeCode(decodeURIComponent(codeSlug));
-  const allProds = getMergedProducts(true);
-  const found = allProds.find(p => normalizeCode(p.code) === cleanTarget || (p.slug && p.slug === codeSlug));
-  if (!found) return null;
-  const related = allProds
-    .filter(p => p.published && (p.collection_slug === found.collection_slug || String(p.collection_id) === String(found.collection_id)) && normalizeCode(p.code) !== cleanTarget)
-    .slice(0, 4);
-  return {
-    ...found,
-    related
-  };
-}
-
-export function getMergedBranches() {
-  let edits = {};
-  let added = [];
-  let deleted = [];
-  if (typeof window !== 'undefined') {
-    try {
-      edits = JSON.parse(localStorage.getItem('nid_crm_branches_edits') || '{}');
-      added = JSON.parse(localStorage.getItem('nid_crm_branches_new') || '[]');
-      deleted = JSON.parse(localStorage.getItem('nid_crm_branches_deleted') || '[]');
-    } catch {}
-  }
-  const deletedSet = new Set(deleted.map(String));
-  const base = (companyData.branches || [])
-    .filter(b => !deletedSet.has(String(b.id)))
-    .map(b => (edits[String(b.id)] ? { ...b, ...edits[String(b.id)] } : b));
-  return [...base, ...added.filter(b => !deletedSet.has(String(b.id)))];
-}
-
-export function getMergedTestimonials() {
-  let edits = {};
-  let added = [];
-  let deleted = [];
-  if (typeof window !== 'undefined') {
-    try {
-      edits = JSON.parse(localStorage.getItem('nid_crm_testimonials_edits') || '{}');
-      added = JSON.parse(localStorage.getItem('nid_crm_testimonials_new') || '[]');
-      deleted = JSON.parse(localStorage.getItem('nid_crm_testimonials_deleted') || '[]');
-    } catch {}
-  }
-  const deletedSet = new Set(deleted.map(String));
-  const base = (testimonialsData || [])
-    .filter(t => !deletedSet.has(String(t.id)))
-    .map(t => (edits[String(t.id)] ? { ...t, ...edits[String(t.id)] } : t));
-  return [...base, ...added.filter(t => !deletedSet.has(String(t.id)))];
-}
-
-export function getMergedUsps() {
-  let edits = {};
-  let added = [];
-  let deleted = [];
-  if (typeof window !== 'undefined') {
-    try {
-      edits = JSON.parse(localStorage.getItem('nid_crm_usps_edits') || '{}');
-      added = JSON.parse(localStorage.getItem('nid_crm_usps_new') || '[]');
-      deleted = JSON.parse(localStorage.getItem('nid_crm_usps_deleted') || '[]');
-    } catch {}
-  }
-  const deletedSet = new Set(deleted.map(String));
-  const base = fallbackUsps
-    .filter(u => !deletedSet.has(String(u.id)))
-    .map(u => (edits[String(u.id)] ? { ...u, ...edits[String(u.id)] } : u));
-  return [...base, ...added.filter(u => !deletedSet.has(String(u.id)))];
-}
-
-export function getMergedCatalogue() {
-  if (typeof window !== 'undefined') {
-    try {
-      const saved = localStorage.getItem('nid_crm_catalogue');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-  }
-  return {
-    title: 'New Ikon Doors Official Catalogue',
-    file_url: '/catalogue/NEW_IKON_DOORS.pdf',
-    pdf_url: '/catalogue/NEW_IKON_DOORS.pdf',
-    version: '2026.1',
-    file_size: '9.0 MB',
-    active: 1,
-    published: true
-  };
-}
-
-export function getMergedSettings() {
-  let edits = {};
-  if (typeof window !== 'undefined') {
-    try {
-      edits = JSON.parse(localStorage.getItem('nid_crm_settings') || '{}');
-    } catch {}
-  }
-  return {
-    company_name: companyData.name || 'New Ikon Doors',
-    tagline: companyData.tagline || 'Elevate Your Space • Upgrade Your Entrance',
-    phone: companyData.phone || '+91 98424 45353',
-    phone_alt: companyData.phoneAlt || '+91 98424 43353',
-    whatsapp: companyData.whatsapp || '9842445353',
-    email: companyData.email || 'abbas43353@gmail.com',
-    address: companyData.address || 'Plot No. 45 C/A1, Thanjavur Road, Near Mariyamman Kovil Bus Stop, Tharanallur, Trichy - 620008, Tamil Nadu, India',
-    specialization: companyData.specialization || 'Dealers in PVC, Teak, Rubber Wood, Mica, Plywoods',
-    machinery: companyData.machinery || 'High-Precision CNC Automated Routing & Vacuum Membrane Technology',
-    ...edits
-  };
-}
-
+// Aliases for backwards compatibility with any remaining imports
+export const getMergedSettings = () => fallbackSettings;
+export const getMergedCollections = () => [];
+export const getMergedProducts = () => [];
 
 // ──────────────────────────────────────────────────────────────────────────────
-// PUBLIC & ADMIN API
+// PUBLIC & ADMIN API (100% Shared Cloud PostgreSQL)
 // ──────────────────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -347,27 +162,31 @@ export const api = {
           .eq('published', true)
           .order('sort_order', { ascending: true });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           return data.map(c => ({
             ...c,
             product_count: c.products ? c.products.length : 0
           }));
         }
+        if (error) console.error('getCollections error:', error);
       } catch (e) {
-        console.warn('Supabase getCollections fallback:', e);
+        console.error('getCollections exception:', e);
       }
     }
-    return getMergedCollections(false);
+    return [];
   },
 
   async getCollection(slug) {
     if (isSupabaseConfigured() && supabase) {
       try {
-        const { data: col, error } = await supabase
-          .from('collections')
-          .select('*')
-          .eq('slug', slug)
-          .single();
+        const clean = decodeURIComponent(slug).trim();
+        let query = supabase.from('collections').select('*');
+        if (!isNaN(clean)) {
+          query = query.or(`slug.eq.${clean},id.eq.${clean}`);
+        } else {
+          query = query.eq('slug', clean);
+        }
+        const { data: col, error } = await query.maybeSingle();
 
         if (!error && col) {
           const { data: prods } = await supabase
@@ -383,10 +202,10 @@ export const api = {
           };
         }
       } catch (e) {
-        console.warn('Supabase getCollection fallback:', e);
+        console.error('getCollection exception:', e);
       }
     }
-    return getMergedCollection(slug);
+    return null;
   },
 
   // ── PRODUCTS ──
@@ -403,12 +222,18 @@ export const api = {
         }
         if (params.search) {
           const s = `%${params.search.trim()}%`;
-          q = q.or(`product_code.ilike.${s},name.ilike.${s},description.ilike.${s}`);
+          q = q.or(`product_code.ilike.${s},code.ilike.${s},name.ilike.${s},description.ilike.${s}`);
         }
+        if (params.collection_id) {
+          q = q.eq('collection_id', params.collection_id);
+        }
+        if (params.collection_slug) {
+          q = q.eq('collections.slug', params.collection_slug);
+        }
+        q = q.order('sort_order', { ascending: true });
         if (params.limit) {
           q = q.limit(parseInt(params.limit, 10));
         }
-        q = q.order('sort_order', { ascending: true });
 
         const { data, error } = await q;
         if (!error && data) {
@@ -418,38 +243,29 @@ export const api = {
             collection_slug: p.collections?.slug || ''
           }));
         }
+        if (error) console.error('getProducts error:', error);
       } catch (e) {
-        console.warn('Supabase getProducts fallback:', e);
+        console.error('getProducts exception:', e);
       }
     }
-
-    // Unified client fallback with merged CRM edits
-    const all = getMergedProducts(false);
-    if (params.search) {
-      const q = params.search.toLowerCase();
-      return all.filter(p => p.code.toLowerCase().includes(q) || (p.collection_name && p.collection_name.toLowerCase().includes(q)) || (p.name && p.name.toLowerCase().includes(q)));
-    }
-    if (params.featured === '1') {
-      const feats = all.filter(p => p.featured);
-      return feats.slice(0, parseInt(params.limit, 10) || 8);
-    }
-    if (params.limit) {
-      return all.slice(0, parseInt(params.limit, 10));
-    }
-    return all;
+    return [];
   },
 
   async getProduct(codeSlug) {
     if (isSupabaseConfigured() && supabase) {
       try {
         const clean = decodeURIComponent(codeSlug).trim();
-        let { data, error } = await supabase
+        let q = supabase
           .from('products')
-          .select('*, collections(*)')
-          .or(`product_code.eq.${clean},code.eq.${clean},slug.eq.${clean.toLowerCase()}`)
-          .single();
+          .select('*, collections(*)');
+        if (!isNaN(clean)) {
+          q = q.or(`id.eq.${clean},product_code.eq.${clean},code.eq.${clean},slug.eq.${clean.toLowerCase()}`);
+        } else {
+          q = q.or(`product_code.eq.${clean},code.eq.${clean},slug.eq.${clean.toLowerCase()}`);
+        }
+        const { data, error } = await q.maybeSingle();
 
-        if (data) {
+        if (!error && data) {
           let related = [];
           if (data.collection_id) {
             const { data: rel } = await supabase
@@ -458,6 +274,7 @@ export const api = {
               .eq('collection_id', data.collection_id)
               .neq('id', data.id)
               .eq('published', true)
+              .order('sort_order', { ascending: true })
               .limit(4);
             related = (rel || []).map(r => formatProduct(r, data.collections));
           }
@@ -470,10 +287,10 @@ export const api = {
           };
         }
       } catch (e) {
-        console.warn('Supabase getProduct fallback:', e);
+        console.error('getProduct exception:', e);
       }
     }
-    return getMergedProduct(codeSlug);
+    return null;
   },
 
   async getFeaturedProducts(limit = 8) {
@@ -494,14 +311,13 @@ export const api = {
           .eq('published', true)
           .order('sort_order', { ascending: true });
 
-        if (!error && data && data.length > 0) {
-          return data;
-        }
+        if (!error && data) return data;
+        if (error) console.error('getBranches error:', error);
       } catch (e) {
-        console.warn('Supabase getBranches fallback:', e);
+        console.error('getBranches exception:', e);
       }
     }
-    return getMergedBranches();
+    return [];
   },
 
   // ── TESTIMONIALS ──
@@ -514,14 +330,13 @@ export const api = {
           .eq('published', true)
           .order('sort_order', { ascending: true });
 
-        if (!error && data && data.length > 0) {
-          return data;
-        }
+        if (!error && data) return data;
+        if (error) console.error('getTestimonials error:', error);
       } catch (e) {
-        console.warn('Supabase getTestimonials fallback:', e);
+        console.error('getTestimonials exception:', e);
       }
     }
-    return getMergedTestimonials();
+    return [];
   },
 
   // ── USPs ──
@@ -532,17 +347,14 @@ export const api = {
           .from('usps')
           .select('*')
           .eq('published', true)
-          .eq('verified', true)
           .order('sort_order', { ascending: true });
 
-        if (!error && data && data.length > 0) {
-          return data;
-        }
+        if (!error && data && data.length > 0) return data;
       } catch (e) {
-        console.warn('Supabase getUsps fallback:', e);
+        console.error('getUsps exception:', e);
       }
     }
-    return getMergedUsps();
+    return fallbackUsps;
   },
 
   // ── CATALOGUE ──
@@ -564,10 +376,18 @@ export const api = {
           };
         }
       } catch (e) {
-        console.warn('Supabase getCatalogue fallback:', e);
+        console.error('getCatalogue exception:', e);
       }
     }
-    return getMergedCatalogue();
+    return {
+      title: 'New Ikon Doors Official Catalogue',
+      file_url: '/catalogue/NEW_IKON_DOORS.pdf',
+      pdf_url: '/catalogue/NEW_IKON_DOORS.pdf',
+      version: '2026.1',
+      file_size: '9.0 MB',
+      active: true,
+      published: true
+    };
   },
 
   // ── SITE SETTINGS ──
@@ -580,14 +400,12 @@ export const api = {
           .limit(1)
           .maybeSingle();
 
-        if (!error && data) {
-          return data;
-        }
+        if (!error && data) return { ...fallbackSettings, ...data };
       } catch (e) {
-        console.warn('Supabase getSettings fallback:', e);
+        console.error('getSettings exception:', e);
       }
     }
-    return getMergedSettings();
+    return fallbackSettings;
   },
 
   async getHomepage() {
@@ -622,29 +440,11 @@ export const api = {
         .single();
 
       if (error) throw new Error(sanitizeError(error));
+      notifyDataChanged();
       return { success: true, id: record?.id };
     }
 
-    // Serverless endpoint or memory fallback
-    try {
-      const res = await fetch('/api/enquiries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (res.ok) return res.json();
-    } catch {}
-
-    // Store in localStorage if offline/fallback
-    try {
-      const enqs = JSON.parse(localStorage.getItem('nid_enquiries') || '[]');
-      const newEnq = { id: Date.now(), ...data, status: 'NEW', created_at: new Date().toISOString() };
-      enqs.unshift(newEnq);
-      localStorage.setItem('nid_enquiries', JSON.stringify(enqs));
-      return { success: true, id: newEnq.id };
-    } catch {}
-
-    return { success: true };
+    throw new Error('Database service unavailable.');
   },
 
   // ── AUTHENTICATION ──
@@ -660,141 +460,92 @@ export const api = {
     return authService.getCurrentUser();
   },
 
-  // ── ADMIN PRIVILEGED CRUD ──
+  // ── ADMIN PRIVILEGED CRUD (Direct Supabase PostgreSQL) ──
   admin: {
     // Products
     async getProducts() {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*, collections(name, slug)')
-            .order('sort_order', { ascending: true });
-          if (!error && data) return data.map(p => formatProduct(p));
-        } catch (e) {
-          console.warn('Supabase admin getProducts fallback:', e);
-        }
+        const { data, error } = await supabase
+          .from('products')
+          .select('*, collections(name, slug)')
+          .order('sort_order', { ascending: true });
+        if (!error && data) return data.map(p => formatProduct(p));
+        if (error) throw new Error(sanitizeError(error));
       }
-      return getMergedProducts(true);
+      return [];
     },
 
     async createProduct(prod) {
       const code = (prod.product_code || prod.code || '').trim();
       const slug = prod.slug || code.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const newProduct = {
-        id: prod.id || `prod_${Date.now()}`,
-        ...prod,
+      const payload = {
+        name: prod.name || `Door ${code}`,
         code,
         product_code: code,
         slug,
+        collection_id: prod.collection_id ? Number(prod.collection_id) : null,
+        description: prod.description || '',
+        short_description: prod.short_description || '',
+        primary_image: prod.primary_image || prod.image || '',
+        image: prod.primary_image || prod.image || '',
+        lifestyle_image: prod.lifestyle_image || '',
+        lifestyle_title: prod.lifestyle_title || '',
+        material: prod.material || '',
+        finish: prod.finish || '',
+        available_sizes: prod.available_sizes || '',
+        applications: prod.applications || '',
+        specs: typeof prod.specs === 'object' ? prod.specs : {},
+        features: Array.isArray(prod.features) ? prod.features : [],
+        gallery_images: Array.isArray(prod.gallery_images) ? prod.gallery_images : [],
         published: prod.published !== false && prod.published !== 0,
         featured: Boolean(prod.featured),
+        sort_order: prod.sort_order !== undefined ? Number(prod.sort_order) : 99,
+        seo_title: prod.seo_title || '',
+        seo_description: prod.seo_description || '',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
-      // Always save to client overlay
-      if (typeof window !== 'undefined') {
-        try {
-          const added = JSON.parse(localStorage.getItem('nid_crm_products_new') || '[]');
-          added.unshift(newProduct);
-          localStorage.setItem('nid_crm_products_new', JSON.stringify(added));
-        } catch (e) {
-          console.warn('LocalStorage save error:', e);
-        }
-      }
+      const { data, error } = await supabase
+        .from('products')
+        .insert([payload])
+        .select()
+        .single();
 
-      // If Supabase is configured, write to Supabase
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data, error } = await supabase.from('products').insert([newProduct]).select().single();
-          if (!error && data) {
-            notifyDataChanged();
-            return data;
-          }
-        } catch (e) {
-          console.warn('Supabase createProduct fallback:', e);
-        }
-      }
-
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return newProduct;
+      return formatProduct(data);
     },
 
     async updateProduct(id, prod) {
       const updatePayload = {
         ...prod,
-        id,
         updated_at: new Date().toISOString()
       };
+      delete updatePayload.id;
+      delete updatePayload.collections;
+      delete updatePayload.collection_name;
+      delete updatePayload.collection_slug;
+      if (updatePayload.collection_id) updatePayload.collection_id = Number(updatePayload.collection_id);
+      if (updatePayload.sort_order !== undefined) updatePayload.sort_order = Number(updatePayload.sort_order);
       if (prod.product_code) updatePayload.code = prod.product_code;
+      if (prod.primary_image) updatePayload.image = prod.primary_image;
 
-      // Always save to client overlay
-      if (typeof window !== 'undefined') {
-        try {
-          const edits = JSON.parse(localStorage.getItem('nid_crm_products_edits') || '{}');
-          const added = JSON.parse(localStorage.getItem('nid_crm_products_new') || '[]');
-          
-          const addedIdx = added.findIndex(p => String(p.id) === String(id));
-          if (addedIdx !== -1) {
-            added[addedIdx] = { ...added[addedIdx], ...updatePayload };
-            localStorage.setItem('nid_crm_products_new', JSON.stringify(added));
-          } else {
-            edits[String(id)] = { ...(edits[String(id)] || {}), ...updatePayload };
-            if (prod.code) edits[normalizeCode(prod.code)] = edits[String(id)];
-            localStorage.setItem('nid_crm_products_edits', JSON.stringify(edits));
-          }
-        } catch (e) {
-          console.warn('LocalStorage update error:', e);
-        }
-      }
+      const { data, error } = await supabase
+        .from('products')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
 
-      // If Supabase is configured, write to Supabase
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('products')
-            .update(updatePayload)
-            .eq('id', id)
-            .select()
-            .single();
-          if (!error && data) {
-            notifyDataChanged();
-            return data;
-          }
-        } catch (e) {
-          console.warn('Supabase updateProduct fallback:', e);
-        }
-      }
-
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return updatePayload;
+      return formatProduct(data);
     },
 
     async deleteProduct(id) {
-      if (typeof window !== 'undefined') {
-        try {
-          const deleted = JSON.parse(localStorage.getItem('nid_crm_products_deleted') || '[]');
-          if (!deleted.includes(String(id))) {
-            deleted.push(String(id));
-            localStorage.setItem('nid_crm_products_deleted', JSON.stringify(deleted));
-          }
-          const added = JSON.parse(localStorage.getItem('nid_crm_products_new') || '[]');
-          const filteredAdded = added.filter(p => String(p.id) !== String(id));
-          localStorage.setItem('nid_crm_products_new', JSON.stringify(filteredAdded));
-        } catch (e) {
-          console.warn('LocalStorage delete error:', e);
-        }
-      }
-
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          await supabase.from('products').delete().eq('id', id);
-        } catch (e) {
-          console.warn('Supabase deleteProduct fallback:', e);
-        }
-      }
-
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
       return { success: true };
     },
@@ -802,109 +553,78 @@ export const api = {
     // Collections
     async getCollections() {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('collections')
-            .select('*, products(id)')
-            .order('sort_order', { ascending: true });
-          if (!error && data) return data.map(c => ({ ...c, product_count: c.products ? c.products.length : 0 }));
-        } catch (e) {
-          console.warn('Supabase admin getCollections fallback:', e);
-        }
+        const { data, error } = await supabase
+          .from('collections')
+          .select('*, products(id)')
+          .order('sort_order', { ascending: true });
+        if (!error && data) return data.map(c => ({ ...c, product_count: c.products ? c.products.length : 0 }));
+        if (error) throw new Error(sanitizeError(error));
       }
-      return getMergedCollections(true);
+      return [];
     },
 
     async createCollection(col) {
-      const newCol = {
-        id: col.id || `col_${Date.now()}`,
-        ...col,
+      const payload = {
+        name: col.name || 'New Collection',
+        slug: col.slug || (col.name ? col.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : `col-${Date.now()}`),
+        description: col.description || '',
+        category: col.category || '',
+        tagline: col.tagline || '',
+        cover_image: col.cover_image || col.hero_image || '',
+        hero_image: col.hero_image || col.cover_image || '',
+        material: col.material || '',
+        finish: col.finish || '',
+        thickness: col.thickness || '',
+        application: col.application || '',
+        published: col.published !== false,
+        featured: Boolean(col.featured),
+        sort_order: col.sort_order !== undefined ? Number(col.sort_order) : 99,
+        display_order: col.sort_order !== undefined ? Number(col.sort_order) : 99,
+        seo_title: col.seo_title || '',
+        seo_description: col.seo_description || '',
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
-      if (typeof window !== 'undefined') {
-        try {
-          const added = JSON.parse(localStorage.getItem('nid_crm_collections_new') || '[]');
-          added.push(newCol);
-          localStorage.setItem('nid_crm_collections_new', JSON.stringify(added));
-        } catch {}
-      }
+      const { data, error } = await supabase
+        .from('collections')
+        .insert([payload])
+        .select()
+        .single();
 
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data, error } = await supabase.from('collections').insert([newCol]).select().single();
-          if (!error && data) {
-            notifyDataChanged();
-            return data;
-          }
-        } catch {}
-      }
-
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return newCol;
+      return data;
     },
 
     async updateCollection(id, col) {
       const updatePayload = {
         ...col,
-        id,
         updated_at: new Date().toISOString()
       };
-
-      if (typeof window !== 'undefined') {
-        try {
-          const edits = JSON.parse(localStorage.getItem('nid_crm_collections_edits') || '{}');
-          const added = JSON.parse(localStorage.getItem('nid_crm_collections_new') || '[]');
-          const addedIdx = added.findIndex(c => String(c.id) === String(id));
-          if (addedIdx !== -1) {
-            added[addedIdx] = { ...added[addedIdx], ...updatePayload };
-            localStorage.setItem('nid_crm_collections_new', JSON.stringify(added));
-          } else {
-            edits[String(id)] = { ...(edits[String(id)] || {}), ...updatePayload };
-            if (col.slug) edits[String(col.slug)] = edits[String(id)];
-            localStorage.setItem('nid_crm_collections_edits', JSON.stringify(edits));
-          }
-        } catch {}
+      delete updatePayload.id;
+      delete updatePayload.products;
+      delete updatePayload.product_count;
+      if (updatePayload.sort_order !== undefined) {
+        updatePayload.sort_order = Number(updatePayload.sort_order);
+        updatePayload.display_order = updatePayload.sort_order;
       }
 
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('collections')
-            .update(updatePayload)
-            .eq('id', id)
-            .select()
-            .single();
-          if (!error && data) {
-            notifyDataChanged();
-            return data;
-          }
-        } catch {}
-      }
+      const { data, error } = await supabase
+        .from('collections')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
 
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return updatePayload;
+      return data;
     },
 
     async deleteCollection(id) {
-      if (typeof window !== 'undefined') {
-        try {
-          const deleted = JSON.parse(localStorage.getItem('nid_crm_collections_deleted') || '[]');
-          if (!deleted.includes(String(id))) {
-            deleted.push(String(id));
-            localStorage.setItem('nid_crm_collections_deleted', JSON.stringify(deleted));
-          }
-          const added = JSON.parse(localStorage.getItem('nid_crm_collections_new') || '[]');
-          localStorage.setItem('nid_crm_collections_new', JSON.stringify(added.filter(c => String(c.id) !== String(id))));
-        } catch {}
-      }
-
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          await supabase.from('collections').delete().eq('id', id);
-        } catch {}
-      }
-
+      const { error } = await supabase.from('collections').delete().eq('id', id);
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
       return { success: true };
     },
@@ -912,73 +632,70 @@ export const api = {
     // Branches
     async getBranches() {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data, error } = await supabase.from('branches').select('*').order('sort_order', { ascending: true });
-          if (!error && data) return data;
-        } catch {}
+        const { data, error } = await supabase
+          .from('branches')
+          .select('*')
+          .order('sort_order', { ascending: true });
+        if (!error && data) return data;
+        if (error) throw new Error(sanitizeError(error));
       }
-      return getMergedBranches();
-    },
-
-    async updateBranch(id, branch) {
-      const updatePayload = { ...branch, id, updated_at: new Date().toISOString() };
-      if (typeof window !== 'undefined') {
-        try {
-          const edits = JSON.parse(localStorage.getItem('nid_crm_branches_edits') || '{}');
-          edits[String(id)] = { ...(edits[String(id)] || {}), ...updatePayload };
-          localStorage.setItem('nid_crm_branches_edits', JSON.stringify(edits));
-        } catch {}
-      }
-
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data } = await supabase.from('branches').update(updatePayload).eq('id', id).select().single();
-          if (data) { notifyDataChanged(); return data; }
-        } catch {}
-      }
-
-      notifyDataChanged();
-      return updatePayload;
+      return [];
     },
 
     async createBranch(branch) {
-      const newBranch = { id: branch.id || `branch_${Date.now()}`, ...branch, updated_at: new Date().toISOString() };
-      if (typeof window !== 'undefined') {
-        try {
-          const added = JSON.parse(localStorage.getItem('nid_crm_branches_new') || '[]');
-          added.push(newBranch);
-          localStorage.setItem('nid_crm_branches_new', JSON.stringify(added));
-        } catch {}
-      }
+      const payload = {
+        name: branch.name || 'New Branch',
+        category: branch.category || 'Showroom & Retail Display',
+        badge: branch.badge || '',
+        description: branch.description || '',
+        address: branch.address || '',
+        phone: branch.phone || '',
+        phone_alt: branch.phone_alt || '',
+        whatsapp: branch.whatsapp || '',
+        maps_url: branch.maps_url || branch.map_url || '',
+        map_url: branch.map_url || branch.maps_url || '',
+        image_url: branch.image_url || branch.image || '',
+        image: branch.image || branch.image_url || '',
+        opening_hours: branch.opening_hours || branch.timings || '',
+        timings: branch.timings || branch.opening_hours || '',
+        highlights: Array.isArray(branch.highlights) ? branch.highlights : [],
+        published: branch.published !== false,
+        sort_order: branch.sort_order !== undefined ? Number(branch.sort_order) : 99,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data } = await supabase.from('branches').insert([newBranch]).select().single();
-          if (data) { notifyDataChanged(); return data; }
-        } catch {}
-      }
+      const { data, error } = await supabase
+        .from('branches')
+        .insert([payload])
+        .select()
+        .single();
 
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return newBranch;
+      return data;
+    },
+
+    async updateBranch(id, branch) {
+      const updatePayload = { ...branch, updated_at: new Date().toISOString() };
+      delete updatePayload.id;
+      if (updatePayload.sort_order !== undefined) updatePayload.sort_order = Number(updatePayload.sort_order);
+
+      const { data, error } = await supabase
+        .from('branches')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw new Error(sanitizeError(error));
+      notifyDataChanged();
+      return data;
     },
 
     async deleteBranch(id) {
-      if (typeof window !== 'undefined') {
-        try {
-          const deleted = JSON.parse(localStorage.getItem('nid_crm_branches_deleted') || '[]');
-          if (!deleted.includes(String(id))) {
-            deleted.push(String(id));
-            localStorage.setItem('nid_crm_branches_deleted', JSON.stringify(deleted));
-          }
-        } catch {}
-      }
-
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          await supabase.from('branches').delete().eq('id', id);
-        } catch {}
-      }
-
+      const { error } = await supabase.from('branches').delete().eq('id', id);
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
       return { success: true };
     },
@@ -986,73 +703,68 @@ export const api = {
     // Testimonials
     async getTestimonials() {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data } = await supabase.from('testimonials').select('*').order('sort_order', { ascending: true });
-          if (data) return data;
-        } catch {}
+        const { data, error } = await supabase
+          .from('testimonials')
+          .select('*')
+          .order('sort_order', { ascending: true });
+        if (!error && data) return data;
+        if (error) throw new Error(sanitizeError(error));
       }
-      return getMergedTestimonials();
+      return [];
     },
 
     async createTestimonial(t) {
-      const newT = { id: t.id || `test_${Date.now()}`, ...t, updated_at: new Date().toISOString() };
-      if (typeof window !== 'undefined') {
-        try {
-          const added = JSON.parse(localStorage.getItem('nid_crm_testimonials_new') || '[]');
-          added.push(newT);
-          localStorage.setItem('nid_crm_testimonials_new', JSON.stringify(added));
-        } catch {}
-      }
+      const payload = {
+        customer_name: t.customer_name || t.name || 'Valued Client',
+        name: t.name || t.customer_name || 'Valued Client',
+        company: t.company || '',
+        designation: t.designation || t.role || '',
+        role: t.role || t.designation || '',
+        location: t.location || 'Trichy',
+        content: t.content || t.quote || '',
+        quote: t.quote || t.content || '',
+        image_url: t.image_url || t.photo || '',
+        photo: t.photo || t.image_url || '',
+        rating: t.rating ? Number(t.rating) : 5,
+        project: t.project || '',
+        published: t.published !== false,
+        sort_order: t.sort_order !== undefined ? Number(t.sort_order) : 99,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data } = await supabase.from('testimonials').insert([newT]).select().single();
-          if (data) { notifyDataChanged(); return data; }
-        } catch {}
-      }
+      const { data, error } = await supabase
+        .from('testimonials')
+        .insert([payload])
+        .select()
+        .single();
 
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return newT;
+      return data;
     },
 
     async updateTestimonial(id, t) {
-      const updatePayload = { ...t, id, updated_at: new Date().toISOString() };
-      if (typeof window !== 'undefined') {
-        try {
-          const edits = JSON.parse(localStorage.getItem('nid_crm_testimonials_edits') || '{}');
-          edits[String(id)] = { ...(edits[String(id)] || {}), ...updatePayload };
-          localStorage.setItem('nid_crm_testimonials_edits', JSON.stringify(edits));
-        } catch {}
-      }
+      const updatePayload = { ...t, updated_at: new Date().toISOString() };
+      delete updatePayload.id;
+      if (updatePayload.rating !== undefined) updatePayload.rating = Number(updatePayload.rating);
+      if (updatePayload.sort_order !== undefined) updatePayload.sort_order = Number(updatePayload.sort_order);
 
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data } = await supabase.from('testimonials').update(updatePayload).eq('id', id).select().single();
-          if (data) { notifyDataChanged(); return data; }
-        } catch {}
-      }
+      const { data, error } = await supabase
+        .from('testimonials')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
 
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return updatePayload;
+      return data;
     },
 
     async deleteTestimonial(id) {
-      if (typeof window !== 'undefined') {
-        try {
-          const deleted = JSON.parse(localStorage.getItem('nid_crm_testimonials_deleted') || '[]');
-          if (!deleted.includes(String(id))) {
-            deleted.push(String(id));
-            localStorage.setItem('nid_crm_testimonials_deleted', JSON.stringify(deleted));
-          }
-        } catch {}
-      }
-
-      if (isSupabaseConfigured() && supabase) {
-        try {
-          await supabase.from('testimonials').delete().eq('id', id);
-        } catch {}
-      }
-
+      const { error } = await supabase.from('testimonials').delete().eq('id', id);
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
       return { success: true };
     },
@@ -1060,50 +772,58 @@ export const api = {
     // USPs
     async getUsps() {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data } = await supabase.from('usps').select('*').order('sort_order', { ascending: true });
-          if (data) return data;
-        } catch {}
+        const { data, error } = await supabase
+          .from('usps')
+          .select('*')
+          .order('sort_order', { ascending: true });
+        if (!error && data) return data;
       }
-      return getMergedUsps();
+      return fallbackUsps;
     },
 
     async createUsp(u) {
-      const newU = { id: u.id || `usp_${Date.now()}`, ...u, updated_at: new Date().toISOString() };
-      if (typeof window !== 'undefined') {
-        try {
-          const added = JSON.parse(localStorage.getItem('nid_crm_usps_new') || '[]');
-          added.push(newU);
-          localStorage.setItem('nid_crm_usps_new', JSON.stringify(added));
-        } catch {}
-      }
+      const payload = {
+        title: u.title || 'Architectural Advantage',
+        description: u.description || '',
+        icon: u.icon || 'Cpu',
+        verified: u.verified !== false,
+        published: u.published !== false,
+        sort_order: u.sort_order !== undefined ? Number(u.sort_order) : 99,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('usps')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return newU;
+      return data;
     },
 
     async updateUsp(id, u) {
-      const updatePayload = { ...u, id, updated_at: new Date().toISOString() };
-      if (typeof window !== 'undefined') {
-        try {
-          const edits = JSON.parse(localStorage.getItem('nid_crm_usps_edits') || '{}');
-          edits[String(id)] = { ...(edits[String(id)] || {}), ...updatePayload };
-          localStorage.setItem('nid_crm_usps_edits', JSON.stringify(edits));
-        } catch {}
-      }
+      const updatePayload = { ...u, updated_at: new Date().toISOString() };
+      delete updatePayload.id;
+      if (updatePayload.sort_order !== undefined) updatePayload.sort_order = Number(updatePayload.sort_order);
+
+      const { data, error } = await supabase
+        .from('usps')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
-      return updatePayload;
+      return data;
     },
 
     async deleteUsp(id) {
-      if (typeof window !== 'undefined') {
-        try {
-          const deleted = JSON.parse(localStorage.getItem('nid_crm_usps_deleted') || '[]');
-          if (!deleted.includes(String(id))) {
-            deleted.push(String(id));
-            localStorage.setItem('nid_crm_usps_deleted', JSON.stringify(deleted));
-          }
-        } catch {}
-      }
+      const { error } = await supabase.from('usps').delete().eq('id', id);
+      if (error) throw new Error(sanitizeError(error));
       notifyDataChanged();
       return { success: true };
     },
@@ -1111,16 +831,17 @@ export const api = {
     // Catalogue
     async getCatalogue() {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data } = await supabase.from('catalogue').select('*').order('id', { ascending: false });
-          if (data && data.length > 0) return data;
-        } catch {}
+        const { data, error } = await supabase
+          .from('catalogue')
+          .select('*')
+          .order('id', { ascending: false });
+        if (!error && data && data.length > 0) return data;
       }
-      return [getMergedCatalogue()];
+      return [await api.getCatalogue()];
     },
 
     async updateCatalogue(cat) {
-      const updatePayload = {
+      const payload = {
         title: cat.title || 'New Ikon Doors Official Catalogue',
         pdf_url: cat.pdf_url || cat.file_url || '/catalogue/NEW_IKON_DOORS.pdf',
         file_url: cat.pdf_url || cat.file_url || '/catalogue/NEW_IKON_DOORS.pdf',
@@ -1131,21 +852,14 @@ export const api = {
         updated_at: new Date().toISOString()
       };
 
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('nid_crm_catalogue', JSON.stringify(updatePayload));
-        } catch {}
-      }
-
       if (isSupabaseConfigured() && supabase) {
-        try {
-          await supabase.from('catalogue').update({ published: false, active: false }).neq('id', 0);
-          await supabase.from('catalogue').insert([updatePayload]);
-        } catch {}
+        await supabase.from('catalogue').update({ published: false, active: false }).neq('id', 0);
+        const { data, error } = await supabase.from('catalogue').insert([payload]).select().single();
+        if (error) throw new Error(sanitizeError(error));
+        notifyDataChanged();
+        return data;
       }
-
-      notifyDataChanged();
-      return updatePayload;
+      return payload;
     },
 
     // Settings
@@ -1154,138 +868,117 @@ export const api = {
     },
 
     async updateSettings(settings) {
-      if (typeof window !== 'undefined') {
-        try {
-          const existing = JSON.parse(localStorage.getItem('nid_crm_settings') || '{}');
-          const merged = { ...existing, ...settings, updated_at: new Date().toISOString() };
-          localStorage.setItem('nid_crm_settings', JSON.stringify(merged));
-        } catch {}
-      }
-
       if (isSupabaseConfigured() && supabase) {
-        try {
-          await supabase.from('site_settings').upsert({
-            id: 1,
-            ...settings,
-            updated_at: new Date().toISOString()
-          });
-        } catch {}
-      }
+        const payload = {
+          id: 1,
+          ...settings,
+          updated_at: new Date().toISOString()
+        };
+        const { data, error } = await supabase
+          .from('site_settings')
+          .upsert(payload)
+          .select()
+          .single();
 
-      notifyDataChanged();
+        if (error) throw new Error(sanitizeError(error));
+        notifyDataChanged();
+        return data || payload;
+      }
       return settings;
     },
 
     // Enquiries
     async getEnquiries(status = null) {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          let q = supabase.from('enquiries').select('*').order('created_at', { ascending: false });
-          if (status) q = q.eq('status', status.toUpperCase());
-          const { data } = await q;
-          if (data) return data;
-        } catch {}
-      }
-
-      if (typeof window !== 'undefined') {
-        try {
-          const enqs = JSON.parse(localStorage.getItem('nid_enquiries') || '[]');
-          return status ? enqs.filter(e => e.status === status.toUpperCase()) : enqs;
-        } catch {}
+        let q = supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+        if (status) q = q.eq('status', status.toUpperCase());
+        const { data, error } = await q;
+        if (!error && data) return data;
+        if (error) throw new Error(sanitizeError(error));
       }
       return [];
     },
 
     async updateEnquiry(id, data) {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          const { data: record } = await supabase.from('enquiries').update(data).eq('id', id).select().single();
-          if (record) return record;
-        } catch {}
-      }
-
-      if (typeof window !== 'undefined') {
-        try {
-          const enqs = JSON.parse(localStorage.getItem('nid_enquiries') || '[]');
-          const idx = enqs.findIndex(e => String(e.id) === String(id));
-          if (idx !== -1) {
-            enqs[idx] = { ...enqs[idx], ...data, updated_at: new Date().toISOString() };
-            localStorage.setItem('nid_enquiries', JSON.stringify(enqs));
-            return enqs[idx];
-          }
-        } catch {}
+        const { data: record, error } = await supabase
+          .from('enquiries')
+          .update({ ...data, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw new Error(sanitizeError(error));
+        notifyDataChanged();
+        return record;
       }
       return data;
     },
 
     async deleteEnquiry(id) {
       if (isSupabaseConfigured() && supabase) {
-        try {
-          await supabase.from('enquiries').delete().eq('id', id);
-        } catch {}
-      }
-
-      if (typeof window !== 'undefined') {
-        try {
-          const enqs = JSON.parse(localStorage.getItem('nid_enquiries') || '[]');
-          localStorage.setItem('nid_enquiries', JSON.stringify(enqs.filter(e => String(e.id) !== String(id))));
-        } catch {}
+        const { error } = await supabase.from('enquiries').delete().eq('id', id);
+        if (error) throw new Error(sanitizeError(error));
+        notifyDataChanged();
       }
       return { success: true };
     },
 
-    // File upload (Supabase Storage or Base64 Data URL)
+    // File upload (Supabase Cloud Storage)
     async uploadFile(bucket, file, folder = '') {
       return storageService.uploadFile(bucket, file, folder);
     },
 
-    // Dashboard Stats
+    // Dashboard Stats (Direct counts from shared Supabase database)
     async getDashboard() {
-      const allProds = getMergedProducts(true);
-      const allCols = getMergedCollections(true);
-      const allBranches = getMergedBranches();
-      const allTests = getMergedTestimonials();
-      const catalogue = getMergedCatalogue();
-      const enqs = await this.getEnquiries();
+      if (isSupabaseConfigured() && supabase) {
+        const [pRes, cRes, bRes, tRes, eRes, catRes] = await Promise.allSettled([
+          supabase.from('products').select('id, published'),
+          supabase.from('collections').select('id'),
+          supabase.from('branches').select('id'),
+          supabase.from('testimonials').select('id'),
+          supabase.from('enquiries').select('id, status'),
+          supabase.from('catalogue').select('*').order('id', { ascending: false }).limit(1).maybeSingle()
+        ]);
+
+        const prods = pRes.status === 'fulfilled' && pRes.value.data ? pRes.value.data : [];
+        const cols = cRes.status === 'fulfilled' && cRes.value.data ? cRes.value.data : [];
+        const branches = bRes.status === 'fulfilled' && bRes.value.data ? bRes.value.data : [];
+        const tests = tRes.status === 'fulfilled' && tRes.value.data ? tRes.value.data : [];
+        const enqs = eRes.status === 'fulfilled' && eRes.value.data ? eRes.value.data : [];
+        const cat = catRes.status === 'fulfilled' && catRes.value.data ? catRes.value.data : null;
+
+        return {
+          total_products: prods.length,
+          published_products: prods.filter(p => p.published).length,
+          total_collections: cols.length,
+          total_branches: branches.length,
+          total_testimonials: tests.length,
+          total_enquiries: enqs.length,
+          new_enquiries: enqs.filter(e => e.status === 'NEW').length,
+          current_catalogue: cat || {
+            title: 'New Ikon Doors Official Catalogue',
+            file_url: '/catalogue/NEW_IKON_DOORS.pdf',
+            version: '2026.1'
+          }
+        };
+      }
 
       return {
-        total_products: allProds.length,
-        published_products: allProds.filter(p => p.published).length,
-        total_collections: allCols.length,
-        total_branches: allBranches.length,
-        total_testimonials: allTests.length,
-        total_enquiries: enqs.length,
-        new_enquiries: enqs.filter(e => e.status === 'NEW').length,
-        current_catalogue: catalogue
+        total_products: 0,
+        published_products: 0,
+        total_collections: 0,
+        total_branches: 0,
+        total_testimonials: 0,
+        total_enquiries: 0,
+        new_enquiries: 0,
+        current_catalogue: null
       };
     },
 
-    // Reset Custom Edits to Original Factory Defaults
+    // Reset method (noop in pure cloud database)
     resetToDefaults() {
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('nid_crm_products_edits');
-          localStorage.removeItem('nid_crm_products_new');
-          localStorage.removeItem('nid_crm_products_deleted');
-          localStorage.removeItem('nid_crm_collections_edits');
-          localStorage.removeItem('nid_crm_collections_new');
-          localStorage.removeItem('nid_crm_collections_deleted');
-          localStorage.removeItem('nid_crm_settings');
-          localStorage.removeItem('nid_crm_branches_edits');
-          localStorage.removeItem('nid_crm_branches_new');
-          localStorage.removeItem('nid_crm_branches_deleted');
-          localStorage.removeItem('nid_crm_testimonials_edits');
-          localStorage.removeItem('nid_crm_testimonials_new');
-          localStorage.removeItem('nid_crm_testimonials_deleted');
-          localStorage.removeItem('nid_crm_usps_edits');
-          localStorage.removeItem('nid_crm_usps_new');
-          localStorage.removeItem('nid_crm_usps_deleted');
-          localStorage.removeItem('nid_crm_catalogue');
-          notifyDataChanged();
-          return true;
-        } catch {}
-      }
-      return false;
+      notifyDataChanged();
+      return true;
     }
   }
 };

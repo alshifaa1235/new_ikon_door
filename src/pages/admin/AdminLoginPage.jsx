@@ -194,7 +194,7 @@ export default function AdminLoginPage() {
                 type="text"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="admin or admin@newikondoors.com"
+                placeholder="Enter username or email"
                 required
                 autoFocus
                 disabled={loading}
@@ -257,25 +257,6 @@ export default function AdminLoginPage() {
             {loading ? 'Authenticating...' : <>Sign In to Dashboard <ArrowRight size={14} /></>}
           </button>
         </form>
-
-        {/* Credentials Helper Card */}
-        <div style={{
-          marginTop: '1.25rem',
-          padding: '0.65rem 0.85rem',
-          background: 'rgba(184, 151, 108, 0.08)',
-          border: '1px dashed rgba(184, 151, 108, 0.3)',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: '0.76rem',
-          color: '#E5C79E',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.25rem'
-        }}>
-          <div style={{ fontWeight: 600, color: 'var(--color-gold-light, #E5C79E)' }}>Administrator Sign In:</div>
-          <div style={{ color: '#D1D5DB' }}>
-            Username: <strong style={{ color: '#fff' }}>admin</strong> &nbsp;&bull;&nbsp; Password: <strong style={{ color: '#fff' }}>admin123</strong>
-          </div>
-        </div>
 
         <div style={{ textAlign: 'center', marginTop: '1.5rem', borderTop: '1px solid var(--border-dark)', paddingTop: '1.25rem' }}>
           <a

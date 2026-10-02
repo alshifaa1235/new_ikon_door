@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api, getMergedCollections, getMergedSettings } from '../services/api';
+import { api } from '../services/api';
+import { supabase } from '../services/supabaseClient';
 import companyData from '../data/company.json';
 import productsData from '../data/products.json';
 
@@ -60,23 +61,11 @@ export function useSite() {
 }
 
 export function SiteProvider({ children }) {
-  const [settings, setSettings] = useState(() => {
-    try {
-      return getMergedSettings();
-    } catch {
-      return defaultSettings;
-    }
-  });
-  const [collections, setCollections] = useState(() => {
-    try {
-      return getMergedCollections(false);
-    } catch {
-      return (productsData.collections || []).map(c => ({
-        ...c,
-        product_count: c.products ? c.products.length : 0
-      }));
-    }
-  });
+  const [settings, setSettings] = useState(defaultSettings);
+  const [collections, setCollections] = useState(() => (productsData.collections || []).map(c => ({
+    ...c,
+    product_count: c.products ? c.products.length : 0
+  })));
   const [homepageContent, setHomepageContent] = useState(defaultHomepage);
   const [catalogue, setCatalogue] = useState({
     title: 'New Ikon Doors Official Catalogue',
@@ -136,17 +125,37 @@ export function SiteProvider({ children }) {
   useEffect(() => {
     refreshSiteData();
 
-    // Listen to admin update events
+    // Listen to local admin update events
     const handleDataChanged = () => {
       refreshSiteData();
     };
 
     window.addEventListener('nid:data-changed', handleDataChanged);
     window.addEventListener('focus', handleDataChanged);
+    document.addEventListener('visibilitychange', handleDataChanged);
+
+    // Supabase Real-time Cloud Synchronization across ALL devices
+    let channel = null;
+    if (supabase) {
+      try {
+        channel = supabase
+          .channel('public:db-sync')
+          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+            refreshSiteData();
+          })
+          .subscribe();
+      } catch (e) {
+        console.warn('Realtime subscription issue:', e);
+      }
+    }
 
     return () => {
       window.removeEventListener('nid:data-changed', handleDataChanged);
       window.removeEventListener('focus', handleDataChanged);
+      document.removeEventListener('visibilitychange', handleDataChanged);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [refreshSiteData]);
 
