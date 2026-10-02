@@ -254,11 +254,16 @@ export default function HomePage() {
                   style={{
                     borderRadius: 'var(--radius-md)',
                     overflow: 'hidden',
-                    aspectRatio: '4/3',
-                    background: '#e8e5df',
+                    height: 'clamp(400px, 46vw, 520px)',
+                    background: 'radial-gradient(circle at center, #24221f 0%, #0f0e0d 100%)',
+                    border: '1px solid rgba(184, 151, 108, 0.25)',
+                    boxShadow: '0 16px 36px rgba(0,0,0,0.14)',
                     order: i % 2 === 1 ? 2 : 1,
                     cursor: 'pointer',
-                    display: 'block',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1.25rem',
                     textDecoration: 'none',
                   }}
                 >
@@ -266,7 +271,16 @@ export default function HomePage() {
                     src={col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`}
                     alt={`New Ikon ${col.name} Collection`}
                     loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    style={{
+                      maxHeight: '100%',
+                      maxWidth: '100%',
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      display: 'block',
+                      filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.75)) drop-shadow(0 0 15px rgba(184,134,11,0.18))',
+                      transition: 'transform 0.4s ease',
+                    }}
                   />
                 </a>
 

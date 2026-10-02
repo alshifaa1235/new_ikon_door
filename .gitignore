@@ -8,11 +8,9 @@ dist/
 dist-ssr/
 # Environment and secret files
 .env
-.env.local
-.env.development
-.env.test
-.env.production
-.env*.local
+.env*
+*.env
+*.env.*
 *.local
 
 
