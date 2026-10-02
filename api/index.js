@@ -477,6 +477,104 @@ export default async function handler(req, res) {
       return sendJson(res, 200, memoryEnquiries);
     }
 
+    if (pathname.startsWith('/api/admin/enquiries/') && method === 'PUT') {
+      const id = pathname.split('/').pop();
+      const body = await getRequestBody(req);
+      const enq = memoryEnquiries.find(e => String(e.id) === String(id));
+      if (enq) Object.assign(enq, body);
+      return sendJson(res, 200, enq || { id, ...body });
+    }
+
+    if (pathname.startsWith('/api/admin/enquiries/') && method === 'DELETE') {
+      const id = pathname.split('/').pop();
+      const idx = memoryEnquiries.findIndex(e => String(e.id) === String(id));
+      if (idx !== -1) memoryEnquiries.splice(idx, 1);
+      return sendJson(res, 200, { success: true });
+    }
+
+    // --- Admin Products Routes ---
+    if (pathname === '/api/admin/products' && method === 'GET') {
+      const all = (productsData.collections || []).flatMap(c => (c.products || []).map(p => formatProduct(p, c)));
+      return sendJson(res, 200, all);
+    }
+
+    if (pathname === '/api/admin/products' && method === 'POST') {
+      const body = await getRequestBody(req);
+      const newProduct = { id: `p_${Date.now()}`, ...body };
+      return sendJson(res, 201, newProduct);
+    }
+
+    if (pathname.startsWith('/api/admin/products/') && method === 'PUT') {
+      const id = pathname.split('/').pop();
+      const body = await getRequestBody(req);
+      return sendJson(res, 200, { id, ...body });
+    }
+
+    if (pathname.startsWith('/api/admin/products/') && method === 'DELETE') {
+      return sendJson(res, 200, { success: true });
+    }
+
+    // --- Admin Collections Routes ---
+    if (pathname === '/api/admin/collections' && method === 'GET') {
+      return sendJson(res, 200, getFallbackCollections());
+    }
+
+    if (pathname === '/api/admin/collections' && method === 'POST') {
+      const body = await getRequestBody(req);
+      return sendJson(res, 201, { id: `col_${Date.now()}`, ...body });
+    }
+
+    if (pathname.startsWith('/api/admin/collections/') && method === 'PUT') {
+      const id = pathname.split('/').pop();
+      const body = await getRequestBody(req);
+      return sendJson(res, 200, { id, ...body });
+    }
+
+    if (pathname.startsWith('/api/admin/collections/') && method === 'DELETE') {
+      return sendJson(res, 200, { success: true });
+    }
+
+    // --- Admin Branches, Testimonials, USPs, Settings, Catalogue Routes ---
+    if (pathname === '/api/admin/branches' && (method === 'GET' || method === 'POST')) {
+      if (method === 'POST') {
+        const body = await getRequestBody(req);
+        return sendJson(res, 201, { id: `b_${Date.now()}`, ...body });
+      }
+      return sendJson(res, 200, companyData.branches || []);
+    }
+
+    if (pathname.startsWith('/api/admin/branches/') && (method === 'PUT' || method === 'DELETE')) {
+      if (method === 'DELETE') return sendJson(res, 200, { success: true });
+      const id = pathname.split('/').pop();
+      const body = await getRequestBody(req);
+      return sendJson(res, 200, { id, ...body });
+    }
+
+    if (pathname === '/api/admin/testimonials' && (method === 'GET' || method === 'POST')) {
+      if (method === 'POST') {
+        const body = await getRequestBody(req);
+        return sendJson(res, 201, { id: `t_${Date.now()}`, ...body });
+      }
+      return sendJson(res, 200, testimonialsData || []);
+    }
+
+    if (pathname.startsWith('/api/admin/testimonials/') && (method === 'PUT' || method === 'DELETE')) {
+      if (method === 'DELETE') return sendJson(res, 200, { success: true });
+      const id = pathname.split('/').pop();
+      const body = await getRequestBody(req);
+      return sendJson(res, 200, { id, ...body });
+    }
+
+    if (pathname === '/api/admin/settings' && method === 'PUT') {
+      const body = await getRequestBody(req);
+      return sendJson(res, 200, body);
+    }
+
+    if (pathname === '/api/admin/catalogue' && method === 'PUT') {
+      const body = await getRequestBody(req);
+      return sendJson(res, 200, body);
+    }
+
     // 404 for unknown API routes
     return sendJson(res, 404, { error: `Endpoint ${pathname} not found` });
 

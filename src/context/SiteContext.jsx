@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api } from '../services/api';
+import { api, getMergedCollections, getMergedSettings } from '../services/api';
 import companyData from '../data/company.json';
 import productsData from '../data/products.json';
 
@@ -60,11 +60,23 @@ export function useSite() {
 }
 
 export function SiteProvider({ children }) {
-  const [settings, setSettings] = useState(defaultSettings);
-  const [collections, setCollections] = useState(() => (productsData.collections || []).map(c => ({
-    ...c,
-    product_count: c.products ? c.products.length : 0
-  })));
+  const [settings, setSettings] = useState(() => {
+    try {
+      return getMergedSettings();
+    } catch {
+      return defaultSettings;
+    }
+  });
+  const [collections, setCollections] = useState(() => {
+    try {
+      return getMergedCollections(false);
+    } catch {
+      return (productsData.collections || []).map(c => ({
+        ...c,
+        product_count: c.products ? c.products.length : 0
+      }));
+    }
+  });
   const [homepageContent, setHomepageContent] = useState(defaultHomepage);
   const [catalogue, setCatalogue] = useState({
     title: 'New Ikon Doors Official Catalogue',
