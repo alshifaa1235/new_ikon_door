@@ -55,7 +55,7 @@ export default function CollectionDetailPage({ slug }) {
             '@type': 'ListItem',
             'position': idx + 1,
             'name': `New Ikon ${p.code}`,
-            'url': `https://www.newikondoors.co.in/product/${(p.code || '').replace(/\s+/g, '-')}`
+            'url': `https://www.newikondoors.co.in/product/${p.slug || (p.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
           }))
         };
 
@@ -277,12 +277,14 @@ export default function CollectionDetailPage({ slug }) {
             gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
             gap: '1.25rem',
           }}>
-            {products.map((product, i) => (
+            {products.map((product, i) => {
+              const productSlug = product.slug || (product.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+              return (
               <a
                 key={product.code || i}
-                href={`/product/${(product.code || '').replace(/\s+/g, '-')}`}
+                href={`/product/${productSlug}`}
                 className="card-image-zoom"
-                onClick={(e) => { e.preventDefault(); navigate(`/product/${(product.code || '').replace(/\s+/g, '-')}`); }}
+                onClick={(e) => { e.preventDefault(); navigate(`/product/${productSlug}`); }}
                 style={{
                   cursor: 'pointer',
                   borderRadius: 'var(--radius-md)',
@@ -357,7 +359,8 @@ export default function CollectionDetailPage({ slug }) {
                   </div>
                 </div>
               </a>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

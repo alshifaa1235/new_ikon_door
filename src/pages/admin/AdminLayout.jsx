@@ -804,7 +804,7 @@ function ProductsSection() {
                         </button>
 
                         <a
-                          href={`/products/${encodeURIComponent((p.code || '').replace(/\s+/g, '-'))}`}
+                          href={`/product/${p.slug || (p.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
                           target="_blank"
                           rel="noopener"
                           style={{
@@ -1264,7 +1264,7 @@ function CollectionsSection() {
                       {c.tagline || c.description || 'Architectural door series.'}
                     </p>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.76rem', color: '#0F172A', background: '#F1F5F9', padding: '0.25rem 0.6rem', borderRadius: 4, fontWeight: 600 }}>
-                      <Package size={13} /> {c.products_count || 0} products
+                      <Package size={13} /> {c.products_count ?? c.product_count ?? (Array.isArray(c.products) ? c.products.length : 0)} products
                     </div>
                   </div>
 

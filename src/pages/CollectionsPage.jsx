@@ -146,8 +146,15 @@ export default function CollectionsPage() {
                     })()}
                   </div>
                   <div style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-gold-dark)', marginBottom: '0.35rem' }}>
-                      {col.category || 'Door Collection'}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-gold-dark)' }}>
+                        {col.category || 'Door Collection'}
+                      </div>
+                      {(col.products_count || col.product_count || (Array.isArray(col.products) ? col.products.length : 0)) ? (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-secondary)', padding: '0.15rem 0.5rem', borderRadius: 4 }}>
+                          {col.products_count || col.product_count || col.products.length} Designs
+                        </span>
+                      ) : null}
                     </div>
                     <h2 style={{
                       fontFamily: 'var(--font-display)',

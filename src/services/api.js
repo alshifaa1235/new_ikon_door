@@ -7,6 +7,7 @@
 // ==============================================================================
 
 import { supabase, isSupabaseConfigured, authService, storageService, sanitizeError } from './supabaseClient.js';
+import productsData from '../data/products.json';
 
 // Clear any legacy client-side localStorage overrides from earlier versions
 // to ensure every device (PC, phone, tablet) renders the live production DB.
@@ -71,7 +72,7 @@ export function formatProduct(p, col = null) {
     code: p.product_code || p.code || '',
     product_code: p.product_code || p.code || '',
     name: p.name || `Door ${p.product_code || p.code || ''}`,
-    slug: p.slug || (p.code ? p.code.toLowerCase().replace(/[^a-z0-9]+/g, '-') : ''),
+    slug: p.slug ? p.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : (p.code ? p.code.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : ''),
     collection_id: p.collection_id || (col ? col.id : null),
     collection_slug: p.collection_slug || (col ? col.slug : ''),
     collection_name: p.collection_name || (col ? col.name : ''),
@@ -163,17 +164,28 @@ export const api = {
           .order('sort_order', { ascending: true });
 
         if (!error && data) {
-          return data.map(c => ({
-            ...c,
-            product_count: c.products ? c.products.length : 0
-          }));
+          return data.map(c => {
+            const count = Array.isArray(c.products) ? c.products.length : 0;
+            return {
+              ...c,
+              product_count: count,
+              products_count: count,
+            };
+          });
         }
         if (error) console.error('getCollections error:', error);
       } catch (e) {
         console.error('getCollections exception:', e);
       }
     }
-    return [];
+    return (productsData.collections || []).map(c => {
+      const count = Array.isArray(c.products) ? c.products.length : 0;
+      return {
+        ...c,
+        product_count: count,
+        products_count: count,
+      };
+    });
   },
 
   async getCollection(slug) {
@@ -196,14 +208,30 @@ export const api = {
             .eq('published', true)
             .order('sort_order', { ascending: true });
 
+          const count = prods ? prods.length : 0;
           return {
             ...col,
-            products: (prods || []).map(p => formatProduct(p, col))
+            products: (prods || []).map(p => formatProduct(p, col)),
+            product_count: count,
+            products_count: count,
           };
         }
       } catch (e) {
         console.error('getCollection exception:', e);
       }
+    }
+
+    const localCol = (productsData.collections || []).find(c => c.slug === slug || String(c.id) === String(slug));
+    if (localCol) {
+      const localProds = (productsData.allProducts || [])
+        .filter(p => p.collection_id === localCol.id || p.collection_slug === localCol.slug)
+        .map(p => formatProduct(p, localCol));
+      return {
+        ...localCol,
+        products: localProds,
+        product_count: localProds.length,
+        products_count: localProds.length,
+      };
     }
     return null;
   },
@@ -252,17 +280,32 @@ export const api = {
   },
 
   async getProduct(codeSlug) {
+    if (!codeSlug) return null;
+    const raw = decodeURIComponent(codeSlug).trim();
+    const slugForm = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const spacedForm = raw.replace(/[-_]+/g, ' - ').replace(/\s+/g, ' ').trim().toUpperCase();
+    const compactForm = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
     if (isSupabaseConfigured() && supabase) {
       try {
-        const clean = decodeURIComponent(codeSlug).trim();
+        const orClauses = new Set();
+        if (!isNaN(raw) && Number(raw) > 0) {
+          orClauses.add(`id.eq.${raw}`);
+        }
+        [raw, slugForm, spacedForm].filter(Boolean).forEach(term => {
+          orClauses.add(`slug.eq.${term.toLowerCase()}`);
+          orClauses.add(`code.eq.${term}`);
+          orClauses.add(`product_code.eq.${term}`);
+          orClauses.add(`slug.ilike.${term}`);
+          orClauses.add(`code.ilike.${term}`);
+          orClauses.add(`product_code.ilike.${term}`);
+        });
+
         let q = supabase
           .from('products')
-          .select('*, collections(*)');
-        if (!isNaN(clean)) {
-          q = q.or(`id.eq.${clean},product_code.eq.${clean},code.eq.${clean},slug.eq.${clean.toLowerCase()}`);
-        } else {
-          q = q.or(`product_code.eq.${clean},code.eq.${clean},slug.eq.${clean.toLowerCase()}`);
-        }
+          .select('*, collections(*)')
+          .or(Array.from(orClauses).join(','));
+
         const { data, error } = await q.maybeSingle();
 
         if (!error && data) {
@@ -287,9 +330,47 @@ export const api = {
           };
         }
       } catch (e) {
-        console.error('getProduct exception:', e);
+        console.error('getProduct supabase exception:', e);
       }
     }
+
+    // Infallible Fallback from local catalog (guarantees product renders if Supabase has cold start or offline)
+    try {
+      const match = (productsData.allProducts || []).find(p => {
+        if (!p) return false;
+        const pSlug = (p.slug || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const pCode = (p.code || '').toUpperCase().trim();
+        const pCodeClean = pCode.replace(/[^A-Z0-9]/g, '');
+        const pSlugClean = pSlug.replace(/[^a-z0-9]/g, '');
+
+        return (
+          pSlug === slugForm ||
+          pCode === raw.toUpperCase() ||
+          pCode === spacedForm ||
+          pCodeClean === compactForm ||
+          pSlugClean === compactForm.toLowerCase() ||
+          String(p.id) === raw
+        );
+      });
+
+      if (match) {
+        const col = (productsData.collections || []).find(c => c.id === match.collection_id || c.slug === match.collection_slug);
+        const related = (productsData.allProducts || [])
+          .filter(r => r.collection_id === match.collection_id && r.code !== match.code)
+          .slice(0, 4)
+          .map(r => formatProduct(r, col));
+
+        return {
+          ...formatProduct(match, col),
+          collection_name: col?.name || match.collection || '',
+          collection_slug: col?.slug || match.collection_slug || '',
+          related
+        };
+      }
+    } catch (e) {
+      console.error('getProduct fallback exception:', e);
+    }
+
     return null;
   },
 
@@ -557,7 +638,16 @@ export const api = {
           .from('collections')
           .select('*, products(id)')
           .order('sort_order', { ascending: true });
-        if (!error && data) return data.map(c => ({ ...c, product_count: c.products ? c.products.length : 0 }));
+        if (!error && data) {
+          return data.map(c => {
+            const count = Array.isArray(c.products) ? c.products.length : 0;
+            return {
+              ...c,
+              product_count: count,
+              products_count: count,
+            };
+          });
+        }
         if (error) throw new Error(sanitizeError(error));
       }
       return [];
