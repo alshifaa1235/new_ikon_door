@@ -3,7 +3,7 @@
 // Open Graph, Twitter cards, robots directives, and page-level JSON-LD structured data.
 
 const SITE_NAME = 'New Ikon Doors';
-const BASE_URL = 'https://newikondoors.com';
+const BASE_URL = 'https://www.newikondoors.co.in';
 const DEFAULT_TITLE = 'New Ikon Doors | Architectural Door Manufacturer & Wholesaler • Trichy';
 const DEFAULT_DESC  = 'New Ikon Doors: Precision architectural door manufacturing in Trichy, Tamil Nadu. Manufacturers & wholesalers of Marble Membrane, UV Membrane, Steel Patti, Teak, and WPVC Doors.';
 const DEFAULT_IMAGE = `${BASE_URL}/new_ikon_logo.png`;

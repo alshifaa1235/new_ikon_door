@@ -34,32 +34,32 @@ export default function ProductDetailPage({ code }) {
               '@type': 'ListItem',
               'position': 1,
               'name': 'Home',
-              'item': 'https://newikondoors.com/'
+              'item': 'https://www.newikondoors.co.in/'
             },
             {
               '@type': 'ListItem',
               'position': 2,
               'name': 'Collections',
-              'item': 'https://newikondoors.com/collections'
+              'item': 'https://www.newikondoors.co.in/collections'
             },
             {
               '@type': 'ListItem',
               'position': 3,
               'name': collectionName,
-              'item': `https://newikondoors.com/collections/${collectionSlug}`
+              'item': `https://www.newikondoors.co.in/collections/${collectionSlug}`
             },
             {
               '@type': 'ListItem',
               'position': 4,
               'name': data.code,
-              'item': `https://newikondoors.com/product/${productSlug}`
+              'item': `https://www.newikondoors.co.in/product/${productSlug}`
             }
           ]
         };
 
         const imageUrl = data.image?.startsWith('http')
           ? data.image
-          : `https://newikondoors.com${data.image?.startsWith('/') ? data.image : `/doors/${data.image}`}`;
+          : `https://www.newikondoors.co.in${data.image?.startsWith('/') ? data.image : `/doors/${data.image}`}`;
 
         const productSchema = {
           '@context': 'https://schema.org',
@@ -76,9 +76,9 @@ export default function ProductDetailPage({ code }) {
           'manufacturer': {
             '@type': 'Organization',
             'name': 'New Ikon Doors',
-            'url': 'https://newikondoors.com/'
+            'url': 'https://www.newikondoors.co.in/'
           },
-          'url': `https://newikondoors.com/product/${productSlug}`
+          'url': `https://www.newikondoors.co.in/product/${productSlug}`
         };
 
         setSEO({

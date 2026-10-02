@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://newikondoors.com/sitemap.xml
+Sitemap: https://www.newikondoors.co.in/sitemap.xml

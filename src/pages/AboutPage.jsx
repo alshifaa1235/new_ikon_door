@@ -31,13 +31,13 @@ export default function AboutPage() {
             '@type': 'ListItem',
             'position': 1,
             'name': 'Home',
-            'item': 'https://newikondoors.com/'
+            'item': 'https://www.newikondoors.co.in/'
           },
           {
             '@type': 'ListItem',
             'position': 2,
             'name': 'About',
-            'item': 'https://newikondoors.com/about'
+            'item': 'https://www.newikondoors.co.in/about'
           }
         ]
       }

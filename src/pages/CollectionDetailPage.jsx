@@ -29,19 +29,19 @@ export default function CollectionDetailPage({ slug }) {
               '@type': 'ListItem',
               'position': 1,
               'name': 'Home',
-              'item': 'https://newikondoors.com/'
+              'item': 'https://www.newikondoors.co.in/'
             },
             {
               '@type': 'ListItem',
               'position': 2,
               'name': 'Collections',
-              'item': 'https://newikondoors.com/collections'
+              'item': 'https://www.newikondoors.co.in/collections'
             },
             {
               '@type': 'ListItem',
               'position': 3,
               'name': data.name || slug,
-              'item': `https://newikondoors.com/collections/${slug}`
+              'item': `https://www.newikondoors.co.in/collections/${slug}`
             }
           ]
         };
@@ -55,7 +55,7 @@ export default function CollectionDetailPage({ slug }) {
             '@type': 'ListItem',
             'position': idx + 1,
             'name': `New Ikon ${p.code}`,
-            'url': `https://newikondoors.com/product/${(p.code || '').replace(/\s+/g, '-')}`
+            'url': `https://www.newikondoors.co.in/product/${(p.code || '').replace(/\s+/g, '-')}`
           }))
         };
 

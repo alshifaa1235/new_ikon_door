@@ -22,13 +22,13 @@ export default function TestimonialsPage() {
             '@type': 'ListItem',
             'position': 1,
             'name': 'Home',
-            'item': 'https://newikondoors.com/'
+            'item': 'https://www.newikondoors.co.in/'
           },
           {
             '@type': 'ListItem',
             'position': 2,
             'name': 'Testimonials',
-            'item': 'https://newikondoors.com/testimonials'
+            'item': 'https://www.newikondoors.co.in/testimonials'
           }
         ]
       }

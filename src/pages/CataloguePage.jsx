@@ -43,13 +43,13 @@ export default function CataloguePage() {
             '@type': 'ListItem',
             'position': 1,
             'name': 'Home',
-            'item': 'https://newikondoors.com/'
+            'item': 'https://www.newikondoors.co.in/'
           },
           {
             '@type': 'ListItem',
             'position': 2,
             'name': 'Catalogue',
-            'item': 'https://newikondoors.com/catalogue'
+            'item': 'https://www.newikondoors.co.in/catalogue'
           }
         ]
       }

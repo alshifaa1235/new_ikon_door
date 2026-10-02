@@ -31,13 +31,13 @@ export default function ContactPage() {
             '@type': 'ListItem',
             'position': 1,
             'name': 'Home',
-            'item': 'https://newikondoors.com/'
+            'item': 'https://www.newikondoors.co.in/'
           },
           {
             '@type': 'ListItem',
             'position': 2,
             'name': 'Contact',
-            'item': 'https://newikondoors.com/contact'
+            'item': 'https://www.newikondoors.co.in/contact'
           }
         ]
       }
