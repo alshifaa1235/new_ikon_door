@@ -27,7 +27,7 @@ function RevealDiv({ className = 'reveal', delay = 0, children, style = {} }) {
 export default function HomePage() {
   const { navigate } = useNav();
   const { collections: siteCollections, homepageContent, settings } = useSite();
-  const [heroLoaded, setHeroLoaded] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     setSEO({
@@ -35,7 +35,9 @@ export default function HomePage() {
       description: 'New Ikon Doors: Precision architectural door manufacturing in Trichy, Tamil Nadu. Wholesalers & manufacturers of UV Membrane, Marble Membrane, Steel Patti, Teak, and WPVC Doors.',
       canonical: '/'
     });
-    setTimeout(() => setHeroLoaded(true), 100);
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(min-width: 768px)').matches) {
+      setIsDesktop(true);
+    }
   }, []);
 
   const collections = siteCollections || [];
@@ -71,14 +73,17 @@ export default function HomePage() {
           inset: 0,
           zIndex: 1,
         }}>
-          {/* High-res poster preloaded for instant LCP */}
+          {/* High-res responsive poster preloaded for instant LCP */}
           <picture>
+            <source media="(max-width: 767px)" srcSet="/hero_door_poster_mobile.webp" type="image/webp" />
             <source srcSet="/hero_door_poster.webp" type="image/webp" />
             <img
-              src="/hero_door_poster.jpg"
+              src="/hero_door_poster_mobile.webp"
               alt="New Ikon Doors Architectural Entrance"
               fetchPriority="high"
               decoding="async"
+              width={640}
+              height={857}
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -90,26 +95,27 @@ export default function HomePage() {
               }}
             />
           </picture>
-          {/* Desktop cinematic video (hidden on mobile to save 2MB payload) */}
-          <video
-            autoPlay muted loop playsInline
-            preload="none"
-            className="hide-mobile"
-            poster="/hero_door_poster.webp"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: heroLoaded ? 0.55 : 0,
-              transition: 'opacity 1.2s ease',
-              zIndex: 1,
-            }}
-          >
-            <source src="/hero_door_opening.webm" type="video/webm" />
-            <source src="/hero_door_opening.mp4" type="video/mp4" />
-          </video>
+          {/* Desktop cinematic video (omitted entirely on mobile to save 2MB-4MB payload) */}
+          {isDesktop && (
+            <video
+              autoPlay muted loop playsInline
+              preload="none"
+              poster="/hero_door_poster.webp"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0.55,
+                transition: 'opacity 1.2s ease',
+                zIndex: 1,
+              }}
+            >
+              <source src="/hero_door_opening.webm" type="video/webm" />
+              <source src="/hero_door_opening.mp4" type="video/mp4" />
+            </video>
+          )}
           <div style={{
             position: 'absolute',
             inset: 0,
@@ -126,11 +132,7 @@ export default function HomePage() {
           maxWidth: 800,
           paddingTop: 'calc(var(--topbar-height) + var(--nav-height))',
         }}>
-          <div style={{
-            opacity: heroLoaded ? 1 : 0,
-            transform: heroLoaded ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
-          }}>
+          <div>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -158,9 +160,6 @@ export default function HomePage() {
             color: '#fff',
             letterSpacing: '0.02em',
             marginBottom: '1.5rem',
-            opacity: heroLoaded ? 1 : 0,
-            transform: heroLoaded ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.5s',
           }}>
             {heroTitle}
             {heroSubtitle && heroSubtitle.trim() && heroSubtitle.trim() !== heroDesc.trim() && heroSubtitle.trim() !== heroTitle.trim() && (
@@ -179,9 +178,6 @@ export default function HomePage() {
             lineHeight: 1.7,
             maxWidth: 580,
             margin: '0 auto 2.5rem',
-            opacity: heroLoaded ? 1 : 0,
-            transform: heroLoaded ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.7s',
           }}>
             {heroDesc}
           </p>
@@ -191,9 +187,6 @@ export default function HomePage() {
             gap: '0.85rem',
             justifyContent: 'center',
             flexWrap: 'wrap',
-            opacity: heroLoaded ? 1 : 0,
-            transform: heroLoaded ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.9s',
           }}>
             <a
               href="/collections"

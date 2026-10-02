@@ -131,12 +131,12 @@ export default function Navbar({ currentPage, quoteCount }) {
             }}
           >
             <picture>
-              <source srcSet={isTransparent ? '/new_ikon_logo_white.webp' : '/new_ikon_logo.webp'} type="image/webp" />
+              <source srcSet={isTransparent ? '/new_ikon_logo_white_sm.webp' : '/new_ikon_logo_sm.webp'} type="image/webp" />
               <img
-                src={isTransparent ? '/new_ikon_logo_white.png' : '/new_ikon_logo.png'}
+                src={isTransparent ? '/new_ikon_logo_white_sm.webp' : '/new_ikon_logo_sm.webp'}
                 alt="New Ikon Doors"
-                width={166}
-                height={40}
+                width={123}
+                height={84}
                 fetchPriority="high"
                 decoding="async"
                 style={{ height: scrolled ? 36 : 42, width: 'auto', transition: 'height 0.3s', objectFit: 'contain' }}
@@ -348,8 +348,8 @@ export default function Navbar({ currentPage, quoteCount }) {
             borderBottom: '1px solid var(--border-subtle)',
           }}>
             <picture>
-              <source srcSet="/new_ikon_logo.webp" type="image/webp" />
-              <img src="/new_ikon_logo.png" alt="New Ikon Doors" width={150} height={36} loading="lazy" decoding="async" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+              <source srcSet="/new_ikon_logo_sm.webp" type="image/webp" />
+              <img src="/new_ikon_logo_sm.webp" alt="New Ikon Doors" width={123} height={84} loading="lazy" decoding="async" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
             </picture>
             <button
               onClick={() => setMobileOpen(false)}

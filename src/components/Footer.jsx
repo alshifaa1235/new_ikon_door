@@ -114,8 +114,8 @@ export default function Footer() {
         }}>
           <div style={{ maxWidth: 300 }}>
             <picture>
-              <source srcSet="/new_ikon_logo_white.webp" type="image/webp" />
-              <img src="/new_ikon_logo_white.png" alt="New Ikon Doors" width={158} height={38} loading="lazy" decoding="async" style={{ height: 38, width: 158, aspectRatio: '158 / 38', marginBottom: '0.75rem', opacity: 0.95, objectFit: 'contain' }} />
+              <source srcSet="/new_ikon_logo_white_sm.webp" type="image/webp" />
+              <img src="/new_ikon_logo_white_sm.webp" alt="New Ikon Doors" width={123} height={84} loading="lazy" decoding="async" style={{ height: 38, width: 'auto', marginBottom: '0.75rem', opacity: 0.95, objectFit: 'contain' }} />
             </picture>
             {settings?.tagline && (
               <p style={{ fontSize: '0.82rem', color: 'var(--color-gold-light)', letterSpacing: '0.03em', marginBottom: '0.85rem', fontWeight: 500 }}>

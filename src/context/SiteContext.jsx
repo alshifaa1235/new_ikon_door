@@ -123,7 +123,23 @@ export function SiteProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    refreshSiteData();
+    // Non-blocking background sync: Initial static state renders in 0ms,
+    // then cloud sync updates seamlessly without delaying First/Largest Contentful Paint.
+    const runRefresh = () => {
+      refreshSiteData();
+    };
+
+    let idleRefreshId = null;
+    let timerRefreshId = null;
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        idleRefreshId = window.requestIdleCallback(runRefresh, { timeout: 1200 });
+      } else {
+        timerRefreshId = setTimeout(runRefresh, 300);
+      }
+    } else {
+      refreshSiteData();
+    }
 
     // Listen to local admin update events
     const handleDataChanged = () => {
@@ -136,16 +152,28 @@ export function SiteProvider({ children }) {
 
     // Supabase Real-time Cloud Synchronization across ALL devices
     let channel = null;
-    if (supabase) {
-      try {
-        channel = supabase
-          .channel('public:db-sync')
-          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-            refreshSiteData();
-          })
-          .subscribe();
-      } catch (e) {
-        console.warn('Realtime subscription issue:', e);
+    const setupRealtime = () => {
+      if (supabase) {
+        try {
+          channel = supabase
+            .channel('public:db-sync')
+            .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+              refreshSiteData();
+            })
+            .subscribe();
+        } catch (e) {
+          console.warn('Realtime subscription issue:', e);
+        }
+      }
+    };
+
+    let idleRealtimeId = null;
+    let timerRealtimeId = null;
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        idleRealtimeId = window.requestIdleCallback(setupRealtime, { timeout: 2000 });
+      } else {
+        timerRealtimeId = setTimeout(setupRealtime, 600);
       }
     }
 
@@ -153,6 +181,10 @@ export function SiteProvider({ children }) {
       window.removeEventListener('nid:data-changed', handleDataChanged);
       window.removeEventListener('focus', handleDataChanged);
       document.removeEventListener('visibilitychange', handleDataChanged);
+      if (idleRefreshId && typeof window !== 'undefined' && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleRefreshId);
+      if (timerRefreshId) clearTimeout(timerRefreshId);
+      if (idleRealtimeId && typeof window !== 'undefined' && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleRealtimeId);
+      if (timerRealtimeId) clearTimeout(timerRealtimeId);
       if (channel && supabase) {
         supabase.removeChannel(channel);
       }
