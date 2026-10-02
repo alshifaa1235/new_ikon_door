@@ -502,8 +502,8 @@ function DashboardSection({ onNavigate }) {
 
       {stats?.recent_enquiries?.length > 0 && (
         <AdminCard title="Recent Customer Enquiries">
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+          <div className="admin-table-container">
+            <table className="admin-table" style={{ borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
                   <th style={{ textAlign: 'left', padding: '0.6rem 0.75rem', color: '#64748B', fontWeight: 600, fontSize: '0.72rem', textTransform: 'uppercase' }}>Name</th>
@@ -683,8 +683,8 @@ function ProductsSection() {
             <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '0.25rem' }}>Try clearing filters or click "+ Add New Product" to create one.</div>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+          <div className="admin-table-container">
+            <table className="admin-table" style={{ borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1rem', color: '#475569', fontWeight: 600, fontSize: '0.72rem', textTransform: 'uppercase', width: 70 }}>Image</th>
@@ -1677,8 +1677,8 @@ function EnquiriesSection() {
       {loading ? <p style={{ color: '#94A3B8' }}>Loading enquiries...</p> : enquiries.length === 0 ? (
         <p style={{ color: '#94A3B8', textAlign: 'center', padding: '2.5rem' }}>No enquiries found under this filter.</p>
       ) : (
-        <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+        <div className="admin-table-container">
+          <table className="admin-table" style={{ borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
                 {['Customer', 'Contact Info', 'Customer Type', 'Message / Notes', 'Status', 'Received', ''].map(h => (
