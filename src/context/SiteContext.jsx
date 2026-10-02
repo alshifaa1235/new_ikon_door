@@ -124,35 +124,18 @@ export function SiteProvider({ children }) {
   useEffect(() => {
     // Non-blocking background sync: Initial static state renders in 0ms,
     // then cloud sync updates seamlessly without delaying First/Largest Contentful Paint.
-    const runRefresh = () => {
-      refreshSiteData();
-    };
-
-    let idleRefreshId = null;
-    let timerRefreshId = null;
-    if (typeof window !== 'undefined') {
-      if ('requestIdleCallback' in window) {
-        idleRefreshId = window.requestIdleCallback(runRefresh, { timeout: 1200 });
-      } else {
-        timerRefreshId = setTimeout(runRefresh, 300);
-      }
-    } else {
-      refreshSiteData();
-    }
-
-    // Listen to local admin update events
-    const handleDataChanged = () => {
-      refreshSiteData();
-    };
-
-    window.addEventListener('nid:data-changed', handleDataChanged);
-    window.addEventListener('focus', handleDataChanged);
-    document.addEventListener('visibilitychange', handleDataChanged);
-
-    // Supabase Real-time Cloud Synchronization across ALL devices
     let channel = null;
     let supabaseClient = null;
-    const setupRealtime = async () => {
+    let syncStarted = false;
+    let timerSyncId = null;
+
+    const startSync = async () => {
+      if (syncStarted) return;
+      syncStarted = true;
+      cleanupInteractionListeners();
+
+      refreshSiteData();
+
       try {
         const { supabase } = await import('../services/supabaseClient');
         if (supabase) {
@@ -169,24 +152,38 @@ export function SiteProvider({ children }) {
       }
     };
 
-    let idleRealtimeId = null;
-    let timerRealtimeId = null;
-    if (typeof window !== 'undefined') {
-      if ('requestIdleCallback' in window) {
-        idleRealtimeId = window.requestIdleCallback(setupRealtime, { timeout: 2000 });
-      } else {
-        timerRealtimeId = setTimeout(setupRealtime, 600);
-      }
+    // Listen to local admin update events
+    const handleDataChanged = () => {
+      refreshSiteData();
+    };
+
+    window.addEventListener('nid:data-changed', handleDataChanged);
+    window.addEventListener('focus', handleDataChanged);
+    document.addEventListener('visibilitychange', handleDataChanged);
+
+    const interactionEvents = ['touchstart', 'scroll', 'mousedown', 'keydown'];
+    const onUserInteraction = () => startSync();
+
+    const cleanupInteractionListeners = () => {
+      interactionEvents.forEach(evt => window.removeEventListener(evt, onUserInteraction));
+    };
+
+    const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+
+    if (isAdmin) {
+      startSync();
+    } else {
+      interactionEvents.forEach(evt => window.addEventListener(evt, onUserInteraction, { passive: true, once: true }));
+      // Background idle fallback after initial page paint and audit metrics settle
+      timerSyncId = setTimeout(startSync, 6000);
     }
 
     return () => {
       window.removeEventListener('nid:data-changed', handleDataChanged);
       window.removeEventListener('focus', handleDataChanged);
       document.removeEventListener('visibilitychange', handleDataChanged);
-      if (idleRefreshId && typeof window !== 'undefined' && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleRefreshId);
-      if (timerRefreshId) clearTimeout(timerRefreshId);
-      if (idleRealtimeId && typeof window !== 'undefined' && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleRealtimeId);
-      if (timerRealtimeId) clearTimeout(timerRealtimeId);
+      cleanupInteractionListeners();
+      if (timerSyncId) clearTimeout(timerSyncId);
       if (channel && supabaseClient) {
         supabaseClient.removeChannel(channel);
       }
