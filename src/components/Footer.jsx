@@ -112,9 +112,11 @@ export default function Footer() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '2.5rem',
         }}>
-          {/* Brand Column */}
           <div style={{ maxWidth: 300 }}>
-            <img src="/new_ikon_logo_white.png" alt="New Ikon Doors" width={158} height={38} style={{ height: 38, width: 158, aspectRatio: '158 / 38', marginBottom: '0.75rem', opacity: 0.95, objectFit: 'contain' }} />
+            <picture>
+              <source srcSet="/new_ikon_logo_white.webp" type="image/webp" />
+              <img src="/new_ikon_logo_white.png" alt="New Ikon Doors" width={158} height={38} loading="lazy" decoding="async" style={{ height: 38, width: 158, aspectRatio: '158 / 38', marginBottom: '0.75rem', opacity: 0.95, objectFit: 'contain' }} />
+            </picture>
             {settings?.tagline && (
               <p style={{ fontSize: '0.82rem', color: 'var(--color-gold-light)', letterSpacing: '0.03em', marginBottom: '0.85rem', fontWeight: 500 }}>
                 {settings.tagline}

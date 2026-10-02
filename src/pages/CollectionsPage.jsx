@@ -122,18 +122,28 @@ export default function CollectionsPage() {
                     padding: '0.85rem',
                     overflow: 'hidden',
                   }}>
-                    <img
-                      src={col.hero_image || col.image || `/doors/door_p03_01.jpg`}
-                      alt={`New Ikon ${col.name} Signature Door`}
-                      loading="lazy"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.65))',
-                        display: 'block',
-                      }}
-                    />
+                    {(() => {
+                      const rawImg = col.hero_image || col.image || `/doors/door_p03_01.jpg`;
+                      const webpImg = rawImg.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+                      return (
+                        <picture>
+                          <source srcSet={webpImg} type="image/webp" />
+                          <img
+                            src={rawImg}
+                            alt={`New Ikon ${col.name} Signature Door`}
+                            loading="lazy"
+                            decoding="async"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
+                              filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.65))',
+                              display: 'block',
+                            }}
+                          />
+                        </picture>
+                      );
+                    })()}
                   </div>
                   <div style={{ padding: '1.25rem 1.5rem' }}>
                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-gold-dark)', marginBottom: '0.35rem' }}>

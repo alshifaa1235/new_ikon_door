@@ -72,27 +72,30 @@ export default function HomePage() {
           zIndex: 1,
         }}>
           {/* High-res poster preloaded for instant LCP */}
-          <img
-            src="/hero_door_poster.jpg"
-            alt="New Ikon Doors Architectural Entrance"
-            fetchPriority="high"
-            decoding="async"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: 0.55,
-              zIndex: 0,
-            }}
-          />
+          <picture>
+            <source srcSet="/hero_door_poster.webp" type="image/webp" />
+            <img
+              src="/hero_door_poster.jpg"
+              alt="New Ikon Doors Architectural Entrance"
+              fetchPriority="high"
+              decoding="async"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0.55,
+                zIndex: 0,
+              }}
+            />
+          </picture>
           {/* Desktop cinematic video (hidden on mobile to save 2MB payload) */}
           <video
             autoPlay muted loop playsInline
             preload="none"
             className="hide-mobile"
-            poster="/hero_door_poster.jpg"
+            poster="/hero_door_poster.webp"
             style={{
               position: 'absolute',
               inset: 0,
@@ -290,25 +293,34 @@ export default function HomePage() {
                       textDecoration: 'none',
                     }}
                   >
-                    <img
-                      src={col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`}
-                      alt={`New Ikon ${col.name} Collection`}
-                      width={380}
-                      height={520}
-                      loading="lazy"
-                      decoding="async"
-                      style={{
-                        maxHeight: '100%',
-                        maxWidth: '100%',
-                        width: 'auto',
-                        height: 'auto',
-                        aspectRatio: '380 / 520',
-                        objectFit: 'contain',
-                        display: 'block',
-                        filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.75)) drop-shadow(0 0 15px rgba(184,134,11,0.18))',
-                        transition: 'transform 0.4s ease',
-                      }}
-                    />
+                    {(() => {
+                      const baseImg = col.hero_image || `/doors/lifestyle_page_${String(i + 3).padStart(2, '0')}.jpg`;
+                      const webpImg = baseImg.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+                      return (
+                        <picture>
+                          <source srcSet={webpImg} type="image/webp" />
+                          <img
+                            src={baseImg}
+                            alt={`New Ikon ${col.name} Collection`}
+                            width={380}
+                            height={520}
+                            loading="lazy"
+                            decoding="async"
+                            style={{
+                              maxHeight: '100%',
+                              maxWidth: '100%',
+                              width: 'auto',
+                              height: 'auto',
+                              aspectRatio: '380 / 520',
+                              objectFit: 'contain',
+                              display: 'block',
+                              filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.75)) drop-shadow(0 0 15px rgba(184,134,11,0.18))',
+                              transition: 'transform 0.4s ease',
+                            }}
+                          />
+                        </picture>
+                      );
+                    })()}
                   </a>
 
                   {/* Text */}

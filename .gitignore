@@ -38,6 +38,7 @@ lerna-debug.log*
 
 # Editor & OS files
 .vscode/
+scratch/
 .idea/
 .DS_Store
 Thumbs.db

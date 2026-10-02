@@ -22,24 +22,30 @@ export default function DoorCard({ product, onSelect, onQuote }) {
         }}
         title={`View ${product.code} details`}
       >
-        <img
-          src={product.image?.startsWith('/') ? product.image : `/doors/${product.image}`}
-          alt={`New Ikon ${product.collection} Model ${product.code}`}
-          width={240}
-          height={360}
-          loading="lazy"
-          decoding="async"
-          style={{
-            maxHeight: '100%',
-            maxWidth: '100%',
-            width: 'auto',
-            height: 'auto',
-            objectFit: 'contain',
-            borderRadius: 2,
-            filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.12))',
-            transition: 'transform 0.4s ease',
-          }}
-        />
+        <picture>
+          <source
+            srcSet={(product.image?.startsWith('/') ? product.image : `/doors/${product.image}`).replace(/\.(jpg|jpeg|png)$/i, '.webp')}
+            type="image/webp"
+          />
+          <img
+            src={product.image?.startsWith('/') ? product.image : `/doors/${product.image}`}
+            alt={`New Ikon ${product.collection} Model ${product.code}`}
+            width={240}
+            height={360}
+            loading="lazy"
+            decoding="async"
+            style={{
+              maxHeight: '100%',
+              maxWidth: '100%',
+              width: 'auto',
+              height: 'auto',
+              objectFit: 'contain',
+              borderRadius: 2,
+              filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.12))',
+              transition: 'transform 0.4s ease',
+            }}
+          />
+        </picture>
       </div>
 
       {/* Editorial Details */}

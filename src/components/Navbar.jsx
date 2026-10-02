@@ -137,6 +137,7 @@ export default function Navbar({ currentPage, quoteCount }) {
                 alt="New Ikon Doors"
                 width={166}
                 height={40}
+                fetchPriority="high"
                 decoding="async"
                 style={{ height: scrolled ? 36 : 42, width: 'auto', transition: 'height 0.3s', objectFit: 'contain' }}
               />
@@ -346,7 +347,10 @@ export default function Navbar({ currentPage, quoteCount }) {
             padding: '1.25rem 1.5rem',
             borderBottom: '1px solid var(--border-subtle)',
           }}>
-            <img src="/new_ikon_logo.png" alt="New Ikon Doors" width={150} height={36} style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+            <picture>
+              <source srcSet="/new_ikon_logo.webp" type="image/webp" />
+              <img src="/new_ikon_logo.png" alt="New Ikon Doors" width={150} height={36} loading="lazy" decoding="async" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+            </picture>
             <button
               onClick={() => setMobileOpen(false)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.3rem' }}
