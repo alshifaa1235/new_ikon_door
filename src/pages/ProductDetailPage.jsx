@@ -22,7 +22,7 @@ export default function ProductDetailPage({ code }) {
         setProduct(data);
         setRelated(data.related || []);
 
-        const productSlug = (data.code || '').replace(/\s+/g, '-');
+        const productSlug = data.slug || (data.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
         const collectionName = data.collection_name || 'Architectural Door';
         const collectionSlug = data.collection_slug || 'collections';
 
@@ -392,12 +392,14 @@ export default function ProductDetailPage({ code }) {
             </div>
 
             <div className="door-elevation-grid">
-              {related.map((rel, i) => (
+              {related.map((rel, i) => {
+                const relSlug = rel.slug || (rel.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                return (
                 <a
                   key={rel.code || i}
-                  href={`/product/${(rel.code || '').replace(/\s+/g, '-')}`}
+                  href={`/product/${relSlug}`}
                   className="card-image-zoom"
-                  onClick={(e) => { e.preventDefault(); navigate(`/product/${(rel.code || '').replace(/\s+/g, '-')}`); }}
+                  onClick={(e) => { e.preventDefault(); navigate(`/product/${relSlug}`); }}
                   style={{
                     cursor: 'pointer',
                     borderRadius: 'var(--radius-md)',
@@ -428,7 +430,8 @@ export default function ProductDetailPage({ code }) {
                     </div>
                   </div>
                 </a>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>

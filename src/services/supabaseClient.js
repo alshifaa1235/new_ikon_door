@@ -115,8 +115,11 @@ export const authService = {
     const cleanInput = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Map username 'admin' to standard administrative email
-    const loginEmail = cleanInput === 'admin' ? 'admin@newikondoors.com' : cleanInput;
+    // Map administrative usernames to production admin email
+    let loginEmail = cleanInput;
+    if (cleanInput === 'admin' || cleanInput === 'abbasabbas' || cleanInput === 'abbas' || cleanInput === 'abbas43353@gmail.com') {
+      loginEmail = 'admin@newikondoors.com';
+    }
 
     // Check Rate Limit
     const rateLimit = checkLoginRateLimit();
@@ -189,11 +192,12 @@ export const authService = {
             .eq('user_id', session.user.id)
             .maybeSingle();
 
-          if (profile && profile.role === 'admin') {
+          if ((profile && profile.role === 'admin') || session.user.email === 'admin@newikondoors.com') {
             return {
               id: session.user.id,
               email: session.user.email,
-              role: profile.role,
+              role: profile?.role || 'admin',
+              name: session.user.user_metadata?.name || 'Administrator',
             };
           }
         }

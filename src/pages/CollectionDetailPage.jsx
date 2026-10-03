@@ -55,7 +55,7 @@ export default function CollectionDetailPage({ slug }) {
             '@type': 'ListItem',
             'position': idx + 1,
             'name': `New Ikon ${p.code}`,
-            'url': `https://www.newikondoors.co.in/product/${(p.code || '').replace(/\s+/g, '-')}`
+            'url': `https://www.newikondoors.co.in/product/${p.slug || (p.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
           }))
         };
 
@@ -114,8 +114,8 @@ export default function CollectionDetailPage({ slug }) {
             overflow: 'hidden',
             background: 'radial-gradient(ellipse at 78% 50%, rgba(184, 134, 11, 0.16) 0%, rgba(18, 17, 15, 0.96) 55%, #0a0a0a 100%)',
           }}>
-            {/* Subtle atmospheric ambient glow from featured door */}
-            <div style={{
+            {/* Subtle atmospheric ambient glow from featured door (desktop only) */}
+            <div className="hide-mobile" style={{
               position: 'absolute',
               right: '8%',
               top: '50%',
@@ -273,12 +273,14 @@ export default function CollectionDetailPage({ slug }) {
           </div>
 
           <div className="door-elevation-grid">
-            {products.map((product, i) => (
+            {products.map((product, i) => {
+              const pSlug = product.slug || (product.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+              return (
               <a
                 key={product.code || i}
-                href={`/product/${(product.code || '').replace(/\s+/g, '-')}`}
+                href={`/product/${pSlug}`}
                 className="card-image-zoom"
-                onClick={(e) => { e.preventDefault(); navigate(`/product/${(product.code || '').replace(/\s+/g, '-')}`); }}
+                onClick={(e) => { e.preventDefault(); navigate(`/product/${pSlug}`); }}
                 style={{
                   cursor: 'pointer',
                   borderRadius: 'var(--radius-md)',
@@ -346,7 +348,8 @@ export default function CollectionDetailPage({ slug }) {
                   </div>
                 </div>
               </a>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

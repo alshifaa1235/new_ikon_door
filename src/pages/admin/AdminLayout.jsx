@@ -804,7 +804,7 @@ function ProductsSection() {
                         </button>
 
                         <a
-                          href={`/products/${encodeURIComponent((p.code || '').replace(/\s+/g, '-'))}`}
+                          href={`/product/${p.slug || (p.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
                           target="_blank"
                           rel="noopener"
                           style={{

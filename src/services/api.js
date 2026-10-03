@@ -7,6 +7,7 @@
 // ==============================================================================
 
 import { supabase, isSupabaseConfigured, authService, storageService, sanitizeError } from './supabaseClient.js';
+import productsJson from '../data/products.json';
 
 // Clear any legacy client-side localStorage overrides from earlier versions
 // to ensure every device (PC, phone, tablet) renders the live production DB.
@@ -205,6 +206,22 @@ export const api = {
         console.error('getCollection exception:', e);
       }
     }
+
+    // Ultimate fallback to bundled catalogue collections
+    try {
+      const clean = decodeURIComponent(slug).trim().toLowerCase();
+      const col = (productsJson.collections || []).find(c => c.slug === clean || String(c.id) === clean);
+      if (col) {
+        const prods = (productsJson.products || [])
+          .filter(p => p.collection_id === col.id || p.collection_slug === col.slug)
+          .map(p => formatProduct(p, col));
+        return {
+          ...col,
+          products: prods
+        };
+      }
+    } catch { }
+
     return null;
   },
 
@@ -255,15 +272,32 @@ export const api = {
     if (isSupabaseConfigured() && supabase) {
       try {
         const clean = decodeURIComponent(codeSlug).trim();
+        const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const compact = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
         let q = supabase
           .from('products')
           .select('*, collections(*)');
-        if (!isNaN(clean)) {
-          q = q.or(`id.eq.${clean},product_code.eq.${clean},code.eq.${clean},slug.eq.${clean.toLowerCase()}`);
+
+        if (!isNaN(clean) && clean !== '') {
+          q = q.or(`id.eq.${clean},product_code.eq.${clean},code.eq.${clean},slug.eq.${slug},slug.eq.${clean.toLowerCase()}`);
         } else {
-          q = q.or(`product_code.eq.${clean},code.eq.${clean},slug.eq.${clean.toLowerCase()}`);
+          q = q.or(`product_code.eq.${clean},code.eq.${clean},slug.eq.${slug},slug.eq.${clean.toLowerCase()}`);
         }
-        const { data, error } = await q.maybeSingle();
+        let { data, error } = await q.maybeSingle();
+
+        if (!data) {
+          const { data: fallbackData } = await supabase
+            .from('products')
+            .select('*, collections(*)')
+            .or(`slug.ilike.%${slug}%,code.ilike.%${compact}%,product_code.ilike.%${compact}%`)
+            .limit(1)
+            .maybeSingle();
+          if (fallbackData) {
+            data = fallbackData;
+            error = null;
+          }
+        }
 
         if (!error && data) {
           let related = [];
@@ -290,6 +324,37 @@ export const api = {
         console.error('getProduct exception:', e);
       }
     }
+
+    // Ultimate resilient fallback to bundled catalogue data
+    try {
+      const clean = decodeURIComponent(codeSlug).trim();
+      const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const compact = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      const found = (productsJson.products || []).find(p => {
+        const pSlug = (p.slug || p.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const pCompact = (p.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        return pSlug === slug || pCompact === compact || String(p.id) === String(clean);
+      });
+
+      if (found) {
+        const col = (productsJson.collections || []).find(c => c.id === found.collection_id || c.slug === found.collection_slug);
+        const related = (productsJson.products || [])
+          .filter(p => (p.collection_id === found.collection_id || p.collection_slug === found.collection_slug) && p.code !== found.code)
+          .slice(0, 4)
+          .map(r => formatProduct(r, col));
+
+        return {
+          ...formatProduct(found, col),
+          collection_name: col?.name || found.collection || '',
+          collection_slug: col?.slug || found.collection_slug || '',
+          related
+        };
+      }
+    } catch (e) {
+      console.error('Fallback getProduct exception:', e);
+    }
+
     return null;
   },
 
