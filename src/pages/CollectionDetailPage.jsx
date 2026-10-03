@@ -55,7 +55,7 @@ export default function CollectionDetailPage({ slug }) {
             '@type': 'ListItem',
             'position': idx + 1,
             'name': `New Ikon ${p.code}`,
-            'url': `https://www.newikondoors.co.in/product/${p.slug || (p.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
+            'url': `https://www.newikondoors.co.in/product/${(p.code || '').replace(/\s+/g, '-')}`
           }))
         };
 
@@ -272,19 +272,13 @@ export default function CollectionDetailPage({ slug }) {
             </p>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: '1.25rem',
-          }}>
-            {products.map((product, i) => {
-              const productSlug = product.slug || (product.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-              return (
+          <div className="door-elevation-grid">
+            {products.map((product, i) => (
               <a
                 key={product.code || i}
-                href={`/product/${productSlug}`}
+                href={`/product/${(product.code || '').replace(/\s+/g, '-')}`}
                 className="card-image-zoom"
-                onClick={(e) => { e.preventDefault(); navigate(`/product/${productSlug}`); }}
+                onClick={(e) => { e.preventDefault(); navigate(`/product/${(product.code || '').replace(/\s+/g, '-')}`); }}
                 style={{
                   cursor: 'pointer',
                   borderRadius: 'var(--radius-md)',
@@ -294,25 +288,18 @@ export default function CollectionDetailPage({ slug }) {
                   transition: 'var(--transition-smooth)',
                   textDecoration: 'none',
                   color: 'inherit',
-                  display: 'block',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 28px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; const img = e.currentTarget.querySelector('img'); if (img) img.style.transform = 'scale(1.03)'; }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; const img = e.currentTarget.querySelector('img'); if (img) img.style.transform = 'scale(1)'; }}
               >
-                <div style={{
-                  height: 380,
-                  background: 'linear-gradient(180deg, #FAF9F7 0%, #F1EFEA 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '1.25rem 1rem',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
+                <div className="door-elevation-img-box">
                   <img
                     src={product.image?.startsWith('/') ? product.image : `/doors/${product.image}`}
                     alt={`New Ikon ${product.code} ${collection.name} Door Elevation`}
                     loading="lazy"
+                    decoding="async"
                     style={{
                       maxHeight: '100%',
                       maxWidth: '100%',
@@ -326,14 +313,14 @@ export default function CollectionDetailPage({ slug }) {
                     }}
                   />
                 </div>
-                <div style={{ padding: '0.85rem 1rem' }}>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 600, marginBottom: '0.35rem' }}>{product.code}</div>
+                <div style={{ padding: '0.75rem 0.85rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 600, marginBottom: '0.25rem' }}>{product.code}</div>
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                   }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--color-gold-dark)', fontWeight: 500, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-gold-dark)', fontWeight: 500, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                       View Elevation <ArrowUpRight size={11} />
                     </span>
                     <button
@@ -342,8 +329,8 @@ export default function CollectionDetailPage({ slug }) {
                         background: 'none',
                         border: '1px solid var(--border-light)',
                         borderRadius: '50%',
-                        width: 30,
-                        height: 30,
+                        width: 28,
+                        height: 28,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -354,13 +341,12 @@ export default function CollectionDetailPage({ slug }) {
                       onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'inherit'; }}
                       title="Add to Quote"
                     >
-                      <ShoppingBag size={13} />
+                      <ShoppingBag size={12} />
                     </button>
                   </div>
                 </div>
               </a>
-              );
-            })}
+            ))}
           </div>
         </div>
       </section>

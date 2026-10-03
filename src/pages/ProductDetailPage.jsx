@@ -22,7 +22,7 @@ export default function ProductDetailPage({ code }) {
         setProduct(data);
         setRelated(data.related || []);
 
-        const productSlug = data.slug || (data.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const productSlug = (data.code || '').replace(/\s+/g, '-');
         const collectionName = data.collection_name || 'Architectural Door';
         const collectionSlug = data.collection_slug || 'collections';
 
@@ -181,36 +181,15 @@ export default function ProductDetailPage({ code }) {
           alignItems: 'start',
         }}>
           {/* Product Image */}
-          <div style={{ position: 'sticky', top: 'calc(var(--nav-height-scrolled) + 1.5rem)' }}>
+          <div className="product-detail-sticky-wrap">
             <div
-              style={{
-                background: 'linear-gradient(180deg, #FAF9F7 0%, #EFECE6 100%)',
-                borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
-                position: 'relative',
-                cursor: 'zoom-in',
-                minHeight: 520,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '2rem 1.5rem',
-                border: '1px solid var(--border-subtle)',
-              }}
+              className="product-detail-main-img-box"
               onClick={() => setImageZoomed(!imageZoomed)}
             >
               <img
                 src={product.image?.startsWith('/') ? product.image : `/doors/${product.image}`}
                 alt={`New Ikon ${product.code} ${product.collection_name} Elevation`}
                 style={{
-                  maxHeight: '100%',
-                  maxWidth: '100%',
-                  width: 'auto',
-                  height: 'auto',
-                  objectFit: 'contain',
-                  display: 'block',
-                  borderRadius: 2,
-                  filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.18))',
-                  transition: 'transform 0.5s var(--ease-out-expo)',
                   transform: imageZoomed ? 'scale(1.35)' : 'scale(1)',
                 }}
               />
@@ -412,19 +391,13 @@ export default function ProductDetailPage({ code }) {
               )}
             </div>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '1.25rem',
-            }}>
-              {related.map((rel, i) => {
-                const relSlug = rel.slug || (rel.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                return (
+            <div className="door-elevation-grid">
+              {related.map((rel, i) => (
                 <a
                   key={rel.code || i}
-                  href={`/product/${relSlug}`}
+                  href={`/product/${(rel.code || '').replace(/\s+/g, '-')}`}
                   className="card-image-zoom"
-                  onClick={(e) => { e.preventDefault(); navigate(`/product/${relSlug}`); }}
+                  onClick={(e) => { e.preventDefault(); navigate(`/product/${(rel.code || '').replace(/\s+/g, '-')}`); }}
                   style={{
                     cursor: 'pointer',
                     borderRadius: 'var(--radius-md)',
@@ -434,35 +407,18 @@ export default function ProductDetailPage({ code }) {
                     transition: 'var(--transition-smooth)',
                     textDecoration: 'none',
                     color: 'inherit',
-                    display: 'block',
+                    display: 'flex',
+                    flexDirection: 'column',
                   }}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; const img = e.currentTarget.querySelector('img'); if (img) img.style.transform = 'scale(1.03)'; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; const img = e.currentTarget.querySelector('img'); if (img) img.style.transform = 'scale(1)'; }}
                 >
-                  <div style={{
-                    height: 280,
-                    background: 'linear-gradient(180deg, #FAF9F7 0%, #F1EFEA 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '1rem',
-                    overflow: 'hidden',
-                  }}>
+                  <div className="door-elevation-img-box">
                     <img
                       src={rel.image?.startsWith('/') ? rel.image : `/doors/${rel.image}`}
                       alt={`New Ikon ${rel.code} ${product.collection_name || 'Door Elevation'}`}
                       loading="lazy"
-                      style={{
-                        maxHeight: '100%',
-                        maxWidth: '100%',
-                        width: 'auto',
-                        height: 'auto',
-                        objectFit: 'contain',
-                        display: 'block',
-                        borderRadius: 2,
-                        filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.12))',
-                        transition: 'transform 0.4s ease',
-                      }}
+                      decoding="async"
                     />
                   </div>
                   <div style={{ padding: '0.85rem 1rem' }}>
@@ -472,8 +428,7 @@ export default function ProductDetailPage({ code }) {
                     </div>
                   </div>
                 </a>
-                );
-              })}
+              ))}
             </div>
           </div>
         </section>

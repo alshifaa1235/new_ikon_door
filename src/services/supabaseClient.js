@@ -17,18 +17,18 @@ export function isSupabaseConfigured() {
 // Client-side singleton instance with cache-busting headers
 export const supabase = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    global: {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
       },
-      global: {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-        },
-      },
-    })
+    },
+  })
   : null;
 
 // Safe error sanitization (never reveal internal DB schemas, table names, or stack traces)
@@ -100,13 +100,13 @@ export function recordFailedLoginAttempt() {
     }
 
     localStorage.setItem(LOCKOUT_KEY, JSON.stringify(data));
-  } catch {}
+  } catch { }
 }
 
 export function clearLoginRateLimit() {
   try {
     localStorage.removeItem(LOCKOUT_KEY);
-  } catch {}
+  } catch { }
 }
 
 // ── Authentication Service ──
@@ -115,9 +115,8 @@ export const authService = {
     const cleanInput = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Map username 'abbasabbas' or 'admin' to administrative account
-    const isAbbas = cleanInput === 'abbasabbas' || cleanInput === 'abbas';
-    const loginEmail = (isAbbas || cleanInput === 'admin') ? 'admin@newikondoors.com' : cleanInput;
+    // Map username 'admin' to standard administrative email
+    const loginEmail = cleanInput === 'admin' ? 'admin@newikondoors.com' : cleanInput;
 
     // Check Rate Limit
     const rateLimit = checkLoginRateLimit();
@@ -138,14 +137,13 @@ export const authService = {
           clearLoginRateLimit();
           const userObj = {
             id: data.user.id,
-            email: isAbbas ? 'abbasabbas' : data.user.email,
-            username: isAbbas ? 'abbasabbas' : 'admin',
+            email: data.user.email,
             role: 'admin',
-            name: isAbbas ? 'Abbas' : (data.user.user_metadata?.name || 'Administrator'),
+            name: data.user.user_metadata?.name || 'Administrator',
           };
           try {
             localStorage.setItem('nid_user', JSON.stringify(userObj));
-          } catch {}
+          } catch { }
           return {
             user: userObj,
             session: data.session,
@@ -168,7 +166,7 @@ export const authService = {
   async signOut() {
     try {
       localStorage.removeItem('nid_user');
-    } catch {}
+    } catch { }
     if (isSupabaseConfigured() && supabase) {
       try {
         await supabase.auth.signOut();
@@ -213,7 +211,7 @@ export const authService = {
           return parsed;
         }
       }
-    } catch {}
+    } catch { }
 
     return null;
   },

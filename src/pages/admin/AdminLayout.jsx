@@ -46,7 +46,7 @@ export default function AdminLayout({ section }) {
         setUser(usr);
         try {
           localStorage.setItem('nid_user', JSON.stringify(usr));
-        } catch {}
+        } catch { }
       } else {
         const saved = localStorage.getItem('nid_user');
         if (!saved) {
@@ -64,10 +64,10 @@ export default function AdminLayout({ section }) {
   const handleLogout = async () => {
     try {
       await api.logout();
-    } catch {}
+    } catch { }
     try {
       localStorage.removeItem('nid_user');
-    } catch {}
+    } catch { }
     navigate('/admin/login', true);
   };
 
@@ -400,7 +400,7 @@ function ImageUploadField({ value, onChange, label = "Product Image", bucket = "
 // ── Dashboard ──
 function DashboardSection({ onNavigate }) {
   const [stats, setStats] = useState(null);
-  useEffect(() => { api.admin.getDashboard().then(setStats).catch(() => {}); }, []);
+  useEffect(() => { api.admin.getDashboard().then(setStats).catch(() => { }); }, []);
 
   const cards = [
     { label: 'Total Products', value: stats?.total_products ?? stats?.products_count ?? 186, icon: <Package size={20} />, color: '#2563EB', key: 'products' },
@@ -804,7 +804,7 @@ function ProductsSection() {
                         </button>
 
                         <a
-                          href={`/product/${p.slug || (p.code || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
+                          href={`/products/${encodeURIComponent((p.code || '').replace(/\s+/g, '-'))}`}
                           target="_blank"
                           rel="noopener"
                           style={{
@@ -1264,7 +1264,7 @@ function CollectionsSection() {
                       {c.tagline || c.description || 'Architectural door series.'}
                     </p>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.76rem', color: '#0F172A', background: '#F1F5F9', padding: '0.25rem 0.6rem', borderRadius: 4, fontWeight: 600 }}>
-                      <Package size={13} /> {c.products_count ?? c.product_count ?? (Array.isArray(c.products) ? c.products.length : 0)} products
+                      <Package size={13} /> {c.products_count || 0} products
                     </div>
                   </div>
 

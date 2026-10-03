@@ -114,19 +114,19 @@ export default function CollectionsPage() {
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <div style={{
-                    aspectRatio: '16/11',
+                    height: 'clamp(240px, 36vh, 320px)',
                     background: 'radial-gradient(circle at center, #24221f 0%, #0f0e0d 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '0.85rem',
+                    padding: '1.25rem 1rem',
                     overflow: 'hidden',
                   }}>
                     {(() => {
                       const rawImg = col.hero_image || col.image || `/doors/door_p03_01.jpg`;
                       const webpImg = rawImg.replace(/\.(jpg|jpeg|png)$/i, '.webp');
                       return (
-                        <picture>
+                        <picture style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <source srcSet={webpImg} type="image/webp" />
                           <img
                             src={rawImg}
@@ -134,10 +134,12 @@ export default function CollectionsPage() {
                             loading="lazy"
                             decoding="async"
                             style={{
-                              width: '100%',
-                              height: '100%',
+                              maxHeight: '100%',
+                              maxWidth: '100%',
+                              width: 'auto',
+                              height: 'auto',
                               objectFit: 'contain',
-                              filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.65))',
+                              filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.75))',
                               display: 'block',
                             }}
                           />
@@ -146,15 +148,8 @@ export default function CollectionsPage() {
                     })()}
                   </div>
                   <div style={{ padding: '1.25rem 1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                      <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-gold-dark)' }}>
-                        {col.category || 'Door Collection'}
-                      </div>
-                      {(col.products_count || col.product_count || (Array.isArray(col.products) ? col.products.length : 0)) ? (
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, background: 'var(--bg-secondary)', padding: '0.15rem 0.5rem', borderRadius: 4 }}>
-                          {col.products_count || col.product_count || col.products.length} Designs
-                        </span>
-                      ) : null}
+                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-gold-dark)', marginBottom: '0.35rem' }}>
+                      {col.category || 'Door Collection'}
                     </div>
                     <h2 style={{
                       fontFamily: 'var(--font-display)',

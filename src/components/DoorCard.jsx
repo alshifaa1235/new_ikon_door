@@ -10,12 +10,12 @@ export default function DoorCard({ product, onSelect, onQuote }) {
         onClick={() => onSelect(product)}
         style={{
           cursor: 'pointer',
-          height: 360,
+          height: 'clamp(240px, 36vh, 340px)',
           background: 'linear-gradient(180deg, #FAF9F7 0%, #F1EFEA 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '1.25rem 1rem',
+          padding: '0.85rem 0.5rem',
           borderRadius: 'var(--radius-md)',
           overflow: 'hidden',
           border: '1px solid var(--border-subtle)',
