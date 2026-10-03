@@ -209,23 +209,6 @@ export default function ProductDetailPage({ code }) {
                 <ZoomIn size={16} />
               </div>
             </div>
-
-            {/* Lifestyle image if available */}
-            {product.lifestyle_image && (
-              <div style={{
-                marginTop: '1rem',
-                borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
-                aspectRatio: '16/9',
-              }}>
-                <img
-                  src={product.lifestyle_image}
-                  alt={product.lifestyle_title || `New Ikon ${product.code} Architectural Elevation`}
-                  loading="lazy"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              </div>
-            )}
           </div>
 
           {/* Product Details */}

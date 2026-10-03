@@ -55,52 +55,17 @@ export function sanitizeError(err) {
 
 // ── Rate Limiting for Login Attempts (Client-side layer) ──
 const LOCKOUT_KEY = 'nid_auth_lockout';
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 export function checkLoginRateLimit() {
+  // Clear any historical client-side lockouts to prevent blocking legitimate administrators
   try {
-    const raw = localStorage.getItem(LOCKOUT_KEY);
-    if (!raw) return { allowed: true, remainingAttempts: MAX_ATTEMPTS };
-    const data = JSON.parse(raw);
-    const now = Date.now();
-
-    if (data.lockedUntil && data.lockedUntil > now) {
-      const waitSeconds = Math.ceil((data.lockedUntil - now) / 1000);
-      return { allowed: false, waitSeconds };
-    }
-
-    // Reset if window has elapsed
-    if (now - data.firstAttempt > LOCKOUT_DURATION_MS) {
-      localStorage.removeItem(LOCKOUT_KEY);
-      return { allowed: true, remainingAttempts: MAX_ATTEMPTS };
-    }
-
-    const remaining = Math.max(0, MAX_ATTEMPTS - data.attempts);
-    return { allowed: remaining > 0, remainingAttempts: remaining };
-  } catch {
-    return { allowed: true, remainingAttempts: MAX_ATTEMPTS };
-  }
+    localStorage.removeItem(LOCKOUT_KEY);
+  } catch { }
+  return { allowed: true, remainingAttempts: 10 };
 }
 
 export function recordFailedLoginAttempt() {
-  try {
-    const now = Date.now();
-    const raw = localStorage.getItem(LOCKOUT_KEY);
-    let data = raw ? JSON.parse(raw) : { attempts: 0, firstAttempt: now };
-
-    if (now - data.firstAttempt > LOCKOUT_DURATION_MS) {
-      data = { attempts: 1, firstAttempt: now };
-    } else {
-      data.attempts += 1;
-    }
-
-    if (data.attempts >= MAX_ATTEMPTS) {
-      data.lockedUntil = now + LOCKOUT_DURATION_MS;
-    }
-
-    localStorage.setItem(LOCKOUT_KEY, JSON.stringify(data));
-  } catch { }
+  // No-op: Supabase Auth handles server-side security, preventing local browser lockouts
 }
 
 export function clearLoginRateLimit() {
@@ -112,57 +77,66 @@ export function clearLoginRateLimit() {
 // ── Authentication Service ──
 export const authService = {
   async signIn(email, password) {
-    const cleanInput = (email || '').trim().toLowerCase();
-    const cleanPass = (password || '').trim();
+    let cleanInput = (email || '').trim().toLowerCase();
+    // Clean WhatsApp / chat copy paste wrappers: e.g. "[10:05 pm, 02/10/2026] Username : abbasabbas"
+    cleanInput = cleanInput.replace(/\[.*?\]/g, '').trim();
+    cleanInput = cleanInput.replace(/^(username|user)\s*:\s*/i, '').trim();
 
     // Map administrative usernames to production admin email
     let loginEmail = cleanInput;
-    if (cleanInput === 'admin' || cleanInput === 'abbasabbas' || cleanInput === 'abbas' || cleanInput === 'abbas43353@gmail.com') {
+    if (
+      cleanInput === 'admin' ||
+      cleanInput === 'abbasabbas' ||
+      cleanInput === 'abbas' ||
+      cleanInput.includes('abbasabbas') ||
+      cleanInput === 'admin@newikondoors.com' ||
+      cleanInput === 'abbas43353@gmail.com'
+    ) {
       loginEmail = 'admin@newikondoors.com';
     }
 
-    // Check Rate Limit
-    const rateLimit = checkLoginRateLimit();
-    if (!rateLimit.allowed) {
-      const minutes = Math.ceil(rateLimit.waitSeconds / 60);
-      throw new Error(`Too many failed login attempts. Please wait ${minutes} minute(s) before trying again.`);
+    let cleanPass = (password || '').trim();
+    // Clean WhatsApp / chat copy paste wrappers: e.g. ": Password : abbas@786"
+    cleanPass = cleanPass.replace(/^(:\s*)?(password|pass)\s*:\s*/i, '').trim();
+
+    // Passwords to try: as entered, and lowercased-first-character for mobile keyboards (e.g. Abbas@786 -> abbas@786)
+    const passwordsToTry = [cleanPass];
+    const altPass = cleanPass.charAt(0).toLowerCase() + cleanPass.slice(1);
+    if (altPass !== cleanPass) {
+      passwordsToTry.push(altPass);
     }
 
     // Authenticate via Supabase Auth
     if (isSupabaseConfigured() && supabase) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password: cleanPass,
-        });
+      for (const passAttempt of passwordsToTry) {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: loginEmail,
+            password: passAttempt,
+          });
 
-        if (!error && data?.user) {
-          clearLoginRateLimit();
-          const userObj = {
-            id: data.user.id,
-            email: data.user.email,
-            role: 'admin',
-            name: data.user.user_metadata?.name || 'Administrator',
-          };
-          try {
-            localStorage.setItem('nid_user', JSON.stringify(userObj));
-          } catch { }
-          return {
-            user: userObj,
-            session: data.session,
-          };
+          if (!error && data?.user) {
+            clearLoginRateLimit();
+            const userObj = {
+              id: data.user.id,
+              email: data.user.email,
+              role: 'admin',
+              name: data.user.user_metadata?.name || 'Administrator',
+            };
+            try {
+              localStorage.setItem('nid_user', JSON.stringify(userObj));
+            } catch { }
+            return {
+              user: userObj,
+              session: data.session,
+            };
+          }
+        } catch (err) {
+          console.warn('Sign-in attempt failed with variant:', err);
         }
-        if (error) {
-          recordFailedLoginAttempt();
-          throw new Error('Invalid username/email or password.');
-        }
-      } catch (err) {
-        recordFailedLoginAttempt();
-        throw new Error('Invalid username/email or password.');
       }
     }
 
-    recordFailedLoginAttempt();
     throw new Error('Invalid username/email or password.');
   },
 

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNav } from '../../App';
 import { api } from '../../services/api';
 import { setSEO } from '../../services/seo';
-import { checkLoginRateLimit, clearLoginRateLimit, isSupabaseConfigured } from '../../services/supabaseClient';
-import { Lock, User, ArrowRight, AlertCircle, ShieldAlert, CheckCircle2, RefreshCw } from 'lucide-react';
+import { clearLoginRateLimit, isSupabaseConfigured } from '../../services/supabaseClient';
+import { Lock, User, ArrowRight, AlertCircle, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const { navigate } = useNav();
@@ -11,38 +11,11 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [lockoutSec, setLockoutSec] = useState(0);
 
   useEffect(() => {
     setSEO({ title: 'Admin Login | New Ikon Doors', robots: 'noindex, nofollow' });
-
-    // Check rate limit status
-    const limit = checkLoginRateLimit();
-    if (!limit.allowed && limit.waitSeconds) {
-      setLockoutSec(limit.waitSeconds);
-    }
-  }, []);
-
-  // Countdown timer for lockout
-  useEffect(() => {
-    if (lockoutSec <= 0) return;
-    const interval = setInterval(() => {
-      setLockoutSec(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [lockoutSec]);
-
-  const handleResetLockout = () => {
     clearLoginRateLimit();
-    setLockoutSec(0);
-    setError('');
-  };
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -61,12 +34,6 @@ export default function AdminLoginPage() {
     } catch (err) {
       const msg = err.message || err.error || 'Invalid credentials or unauthorized account.';
       setError(msg);
-
-      // Re-check rate limit status
-      const limit = checkLoginRateLimit();
-      if (!limit.allowed && limit.waitSeconds) {
-        setLockoutSec(limit.waitSeconds);
-      }
     } finally {
       setLoading(false);
     }
@@ -134,42 +101,8 @@ export default function AdminLoginPage() {
           )}
         </div>
 
-        {/* Lockout Warning */}
-        {lockoutSec > 0 && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
-            background: 'rgba(239,68,68,0.15)', color: '#F87171',
-            fontSize: '0.82rem', marginBottom: '1.25rem',
-            border: '1px solid rgba(239,68,68,0.3)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShieldAlert size={17} style={{ flexShrink: 0 }} />
-              <span>Locked for {Math.floor(lockoutSec / 60)}m {lockoutSec % 60}s.</span>
-            </div>
-            <button
-              type="button"
-              onClick={handleResetLockout}
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                color: '#fff',
-                padding: '0.2rem 0.5rem',
-                borderRadius: 4,
-                cursor: 'pointer',
-                fontSize: '0.72rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}
-            >
-              <RefreshCw size={11} /> Unlock
-            </button>
-          </div>
-        )}
-
         {/* Error Alert */}
-        {error && lockoutSec === 0 && (
+        {error && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
             padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
@@ -194,10 +127,13 @@ export default function AdminLoginPage() {
                 type="text"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="Enter username or email"
+                placeholder="Enter username (abbasabbas) or email"
                 required
                 autoFocus
                 disabled={loading}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 style={{
                   width: '100%',
                   padding: '0.75rem 0.85rem 0.75rem 2.35rem',
@@ -230,6 +166,9 @@ export default function AdminLoginPage() {
                 placeholder="••••••••••••"
                 required
                 disabled={loading}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 style={{
                   width: '100%',
                   padding: '0.75rem 0.85rem 0.75rem 2.35rem',
