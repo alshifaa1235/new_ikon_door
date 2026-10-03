@@ -112,23 +112,8 @@ export default function CollectionDetailPage({ slug }) {
             display: 'flex',
             alignItems: 'center',
             overflow: 'hidden',
-            background: 'radial-gradient(ellipse at 78% 50%, rgba(184, 134, 11, 0.16) 0%, rgba(18, 17, 15, 0.96) 55%, #0a0a0a 100%)',
+            background: 'var(--bg-dark)',
           }}>
-            {/* Subtle atmospheric ambient glow from featured door (desktop only) */}
-            <div className="hide-mobile" style={{
-              position: 'absolute',
-              right: '8%',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '320px',
-              height: '320px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(184, 134, 11, 0.22) 0%, transparent 70%)',
-              filter: 'blur(45px)',
-              pointerEvents: 'none',
-              zIndex: 1,
-            }} />
-
             <div className="container" style={{
               position: 'relative',
               zIndex: 2,
@@ -190,7 +175,7 @@ export default function CollectionDetailPage({ slug }) {
                   position: 'relative',
                   height: '310px',
                   width: '160px',
-                  filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.85)) drop-shadow(0 0 15px rgba(184,134,11,0.2))',
+                  filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.85))',
                   borderRadius: '4px',
                   overflow: 'hidden',
                   background: '#151412',
