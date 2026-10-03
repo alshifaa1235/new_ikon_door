@@ -60,10 +60,14 @@ export function useSite() {
 
 export function SiteProvider({ children }) {
   const [settings, setSettings] = useState(defaultSettings);
-  const [collections, setCollections] = useState(() => (productsData.collections || []).map(c => ({
-    ...c,
-    product_count: c.products ? c.products.length : 0
-  })));
+  const [collections, setCollections] = useState(() => (productsData.collections || []).map(c => {
+    const count = Array.isArray(c.products) ? c.products.length : 0;
+    return {
+      ...c,
+      product_count: count,
+      products_count: count
+    };
+  }));
   const [homepageContent, setHomepageContent] = useState(defaultHomepage);
   const [catalogue, setCatalogue] = useState({
     title: 'New Ikon Doors Official Catalogue',

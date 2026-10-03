@@ -164,10 +164,14 @@ export const api = {
           .order('sort_order', { ascending: true });
 
         if (!error && data) {
-          return data.map(c => ({
-            ...c,
-            product_count: c.products ? c.products.length : 0
-          }));
+          return data.map(c => {
+            const count = Array.isArray(c.products) ? c.products.length : 0;
+            return {
+              ...c,
+              product_count: count,
+              products_count: count
+            };
+          });
         }
         if (error) console.error('getCollections error:', error);
       } catch (e) {
@@ -622,7 +626,16 @@ export const api = {
           .from('collections')
           .select('*, products(id)')
           .order('sort_order', { ascending: true });
-        if (!error && data) return data.map(c => ({ ...c, product_count: c.products ? c.products.length : 0 }));
+        if (!error && data) {
+          return data.map(c => {
+            const count = Array.isArray(c.products) ? c.products.length : 0;
+            return {
+              ...c,
+              product_count: count,
+              products_count: count
+            };
+          });
+        }
         if (error) throw new Error(sanitizeError(error));
       }
       return [];
@@ -670,6 +683,7 @@ export const api = {
       delete updatePayload.id;
       delete updatePayload.products;
       delete updatePayload.product_count;
+      delete updatePayload.products_count;
       if (updatePayload.sort_order !== undefined) {
         updatePayload.sort_order = Number(updatePayload.sort_order);
         updatePayload.display_order = updatePayload.sort_order;

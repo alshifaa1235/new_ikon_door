@@ -178,7 +178,7 @@ export default function AdminLayout({ section }) {
         <main className="admin-main-content">
           {section === 'dashboard' || !section ? <DashboardSection onNavigate={navigate} /> : null}
           {section === 'products' ? <ProductsSection /> : null}
-          {section === 'collections' ? <CollectionsSection /> : null}
+          {section === 'collections' ? <CollectionsSection onNavigate={navigate} /> : null}
           {section === 'branches' ? <BranchesSection /> : null}
           {section === 'testimonials' ? <TestimonialsSection /> : null}
           {section === 'usps' ? <UspsSection /> : null}
@@ -544,7 +544,16 @@ function ProductsSection() {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedCol, setSelectedCol] = useState('');
+  const [selectedCol, setSelectedCol] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nid_admin_filter_col');
+      if (saved) {
+        localStorage.removeItem('nid_admin_filter_col');
+        return saved;
+      }
+    } catch {}
+    return '';
+  });
   const [filterFeatured, setFilterFeatured] = useState('');
 
   // Modal State
@@ -1161,7 +1170,7 @@ function ProductModal({ isOpen, onClose, product, collections, onSaved }) {
 }
 
 // ── Collections Section (Full Add & Edit Functionality) ──
-function CollectionsSection() {
+function CollectionsSection({ onNavigate }) {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1263,9 +1272,32 @@ function CollectionsSection() {
                     <p style={{ fontSize: '0.82rem', color: '#475569', margin: '0 0 0.75rem', lineHeight: 1.45 }}>
                       {c.tagline || c.description || 'Architectural door series.'}
                     </p>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.76rem', color: '#0F172A', background: '#F1F5F9', padding: '0.25rem 0.6rem', borderRadius: 4, fontWeight: 600 }}>
-                      <Package size={13} /> {c.products_count || 0} products
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          localStorage.setItem('nid_admin_filter_col', String(c.id));
+                        } catch {}
+                        if (onNavigate) onNavigate('/admin/products');
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        fontSize: '0.76rem',
+                        color: '#0F172A',
+                        background: '#F1F5F9',
+                        padding: '0.25rem 0.6rem',
+                        borderRadius: 4,
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: onNavigate ? 'pointer' : 'default',
+                        textAlign: 'left'
+                      }}
+                      title="Click to view and filter doors in this collection"
+                    >
+                      <Package size={13} style={{ color: '#B8976C' }} /> {c.products_count ?? c.product_count ?? (Array.isArray(c.products) ? c.products.length : 0)} products
+                    </button>
                   </div>
 
                   {/* Actions */}
